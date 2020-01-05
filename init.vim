@@ -1,4 +1,16 @@
+" ^..^ ___________ ^..^
+" OS detection
+
+	if !exists("g:os")
+		if has("win64") || has("win32") || has("win16")
+			let g:os = "Windows"
+		else
+			let g:os = substitute(system('uname'), '\n', '', '')
+		endif
+	endif
+
 " == Path configuration ==
+
 	" Local path
 	let s:path = fnamemodify(resolve(expand('<sfile>:p')), ':h')
 
@@ -7,13 +19,49 @@
 	let $PATH .= ";" . s:path . "/tools/fd/"
 
 " == Plugins ==
+
 	call plug#begin(s:path . '/plugged')
 		Plug 'vim-airline/vim-airline'
 		Plug 'vim-airline/vim-airline-themes'
 		Plug 'morhetz/gruvbox'
-		Plug 'junegunn/fzf', { 'do': './install --all' }
+		Plug 'junegunn/fzf'
 		Plug 'junegunn/fzf.vim'
-	call plug#end()
+		Plug 'tpope/vim-surround'
+		Plug 'tpope/vim-fugitive'
+		Plug 'tpope/vim-commentary'
+
+		" ncm2 and dependencies
+		Plug 'roxma/nvim-yarp'
+		Plug 'ncm2/ncm2'
+		Plug 'ncm2/ncm2-bufword'
+		Plug 'ncm2/ncm2-path'
+		" ncm2 clang service
+		Plug 'ncm2/ncm2-pyclang'
+		call plug#end()
+
+" == ncm2 ==
+
+	" enable ncm2 for all buffers
+	autocmd BufEnter * call ncm2#enable_for_buffer()
+
+	" IMPORTANT: :help Ncm2PopupOpen for more information
+	set completeopt=noinsert,menuone,noselect
+
+	" ncm2-pyclang settings
+	" if the libclang was not found, use this to specify the correct path:
+	"	g:ncm2_pyclang#library_path=...
+	
+	" Project settings:
+	" 1) Compilation database
+	" 	 CMake settings to generate such file -> -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+	"
+	" let g:ncm2_pyclang#database_path = [
+	" 			\ 'compile_commands.json',
+	" 			\ 'build/compile_commands.json'
+	" 			\ ]
+
+	" Goto declaration
+	autocmd FileType c,cpp nnoremap <buffer> gd :<c-u>call ncm2_pyclang#goto_declaration()<cr>
 
 " == Bindings ==
 
@@ -21,7 +69,8 @@
 	nmap <C-p> :Files .<Enter> 
 
 	" Terminal binding to epscape from the insert mode.
-	tnoremap <Esc> <C-\><C-n>
+	" Note: Breaks return from FZF menu.
+	"	tnoremap <Esc> <C-\><C-n>
 
 	" Remove normal mode arrow keys.
 	nmap <Up> <Nop>
@@ -40,6 +89,7 @@
 	inoremap <C-k> <Up>
 
 " == ctags settings ==
+
 	" Common ctags command.
 	let ctags_cmd = 
 				\"!ctags.exe -R --c++-kinds=+p --fields=+iaS --extras=+q ".
@@ -48,41 +98,78 @@
 	" Rebuild tags for the whole project.
 	nmap <Leader>rt :exec ctags_cmd . " ./Enfusion" \| :exec ctags_cmd . " -a ./A4Gamecode"
 
+	" Auto update ctags on file save.
+	aug ctags_save_hook
+		" Clear group.
+		au!
+		
+		" Update ctags for modified file.
+		au BufWritePost *.h,*.cpp,*hpp,*.c
+					\silent exec ctags_cmd . " -a " . expand("%") | 
+					\echo "Tags updated: " . expand("%")
+	aug END
+
 " == FZF Settings ==
-" function! PlaceFileName()
-" 	let fileName = expand("%:t:r")
-" 	exec "Files ." . fileName
-" endfunction
 
-" nmap <Leader>o :execute PlaceFileName()<CR>
+	" function! PlaceFileName()
+	" 	let fileName = expand("%:t:r")
+	" 	exec "Files ." . fileName
+	" endfunction
 
-aug main_rc
-	" Clear the group.
-	au!
+	" nmap <Leader>o :execute PlaceFileName()<CR>
 
-	" Auto reload any .vim configuration and output its name.
-	au BufWritePost *.vim so % | echo "Config reloaded: " . expand("%")
-	
-	" Update ctags for modified file.
-	au BufWritePost *.h,*.cpp silent exec ctags_cmd . " -a " . expand("%") | echo "Tags updated: " . expand("%")
-aug END
+" == Auto config reload ==
 
-" == Settings ==
-let mapleader="\ "
+	aug config_save_hook
+		" Clear the group.
+		au!
+
+		" Auto reload any .vim configuration and output its name.
+		au BufWritePost *.vim so % | echo "Config reloaded: " . expand("%")
+	aug END
+
+" == Save on buffer leave ==
+
+"	aug buff_save_hook
+"		au!
+"
+"		" if not readonly save the buffer.
+"		au FocusLost,BufLeave * if (&ro == 0) | w | endif
+"	aug END
+
+" == Leader ==
+
+	let mapleader="\ "
+
+" == Language ==
+
+	set langmenu=en_US.UTF-8
+	language en
 
 " == Folding ==
-set foldmethod=syntax
-set nofen
+
+	set foldmethod=syntax
+	set nofen
+
+" == Windows and splits ==
+	set splitbelow
+	set splitright
 
 " == Line numbering ==
-set number
-set relativenumber
+
+	set number
+	set relativenumber
 
 " == Whitespace configuration ==
-set ts=2
-set shiftwidth=2
-set list
-set listchars=space:·,tab:→\ 
+
+	set ts=2
+	set shiftwidth=2
+	set list
+	set listchars=space:·,tab:→\ 
+
+	" Highlight as error everything above 100 column.
+ 	match Error '/\%100v.\+/'
 
 " == Color Scheme ==
-colorscheme gruvbox
+
+	colorscheme gruvbox
