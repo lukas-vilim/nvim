@@ -1,3 +1,12 @@
+set exrc
+set secure
+
+" Attemt to load project configuration.
+if filereadable("init.vim") && expand("%:p:h") != getcwd()
+	echo "Project loaded"
+	so init.vim
+endif
+
 " ^..^ ___________ ^..^
 " OS detection
 
@@ -47,6 +56,13 @@
 	" IMPORTANT: :help Ncm2PopupOpen for more information
 	set completeopt=noinsert,menuone,noselect
 
+	" Use <TAB> to select the popup menu:
+	inoremap <expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
+	inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
+	
+	" Prevent the new line after completion menu Enter:
+	inoremap <expr> <CR> (pumvisible() ? "\<c-y>\ " : "\<CR>")
+
 	" ncm2-pyclang settings
 	" if the libclang was not found, use this to specify the correct path:
 	"	g:ncm2_pyclang#library_path=...
@@ -61,13 +77,24 @@
 	" 			\ ]
 
 	" Goto declaration
-	autocmd FileType c,cpp nnoremap <buffer> gd :<c-u>call ncm2_pyclang#goto_declaration()<cr>
+	autocmd FileType c,cpp nnoremap <buffer> <f12> :<c-u>call ncm2_pyclang#goto_declaration()<cr>
 
 " == Bindings ==
+	" Snippets
+	nmap <Leader>-- o<esc>0D2a/<esc>77a-<esc>
+	nmap <Leader>head <Leader>--2o<esc>75a-<esc>kA<Tab>
 
 	" FZF fuzzy finder binding.
-	nmap <C-p> :Files .<Enter> 
+	nmap <C-p> :Files .<CR> 
+	nmap <Leader>t :BTags<CR>
 
+	function! s:custom_all_ag()
+		call fzf#vim#ag("", {'options': ['-f']})
+	endfunction
+
+	command! -nargs=* -bang Ag call fzf#vim#ag_raw('-f --ignore-dir={.git,.svn} ' . <q-args> . ' .')
+
+	nmap <Leader>a :execute(<sid>custom_all_ag())
 	" Terminal binding to epscape from the insert mode.
 	" Note: Breaks return from FZF menu.
 	"	tnoremap <Esc> <C-\><C-n>
@@ -99,15 +126,15 @@
 	nmap <Leader>rt :exec ctags_cmd . " ./Enfusion" \| :exec ctags_cmd . " -a ./A4Gamecode"
 
 	" Auto update ctags on file save.
-	aug ctags_save_hook
-		" Clear group.
-		au!
+	" aug ctags_save_hook
+	" 	" Clear group.
+	" 	au!
 		
-		" Update ctags for modified file.
-		au BufWritePost *.h,*.cpp,*hpp,*.c
-					\silent exec ctags_cmd . " -a " . expand("%") | 
-					\echo "Tags updated: " . expand("%")
-	aug END
+	" 	" Update ctags for modified file.
+	" 	au BufWritePost *.h,*.cpp,*hpp,*.c
+	" 				\silent exec ctags_cmd . " -a " . expand("%") | 
+	" 				\echo "Tags updated: " . expand("%")
+	" aug END
 
 " == FZF Settings ==
 
