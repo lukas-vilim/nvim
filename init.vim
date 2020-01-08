@@ -1,13 +1,15 @@
 set exrc
 set secure
 
+" ------------------------------------------------------------------------------
 " Attemt to load project configuration.
+
 if filereadable("init.vim") && expand("%:p:h") != getcwd()
 	echo "Project loaded"
 	so init.vim
 endif
 
-" ^..^ ___________ ^..^
+" ------------------------------------------------------------------------------
 " OS detection
 
 	if !exists("g:os")
@@ -18,7 +20,13 @@ endif
 		endif
 	endif
 
-" == Path configuration ==
+	if g:os == "Windows"
+		" Unmap this as it hangs the terminal on windows.
+		nmap <C-z> <Nop>
+	endif
+
+" ------------------------------------------------------------------------------
+" Path configuration 
 
 	" Local path
 	let s:path = fnamemodify(resolve(expand('<sfile>:p')), ':h')
@@ -27,9 +35,13 @@ endif
 	let $PATH .= ";" . s:path . "/tools/ctags/"
 	let $PATH .= ";" . s:path . "/tools/fd/"
 
-" == Plugins ==
+" ------------------------------------------------------------------------------
+" Plugins 
+	" let s:completion = "ale"
+	let s:completion = "ncm"
 
 	call plug#begin(s:path . '/plugged')
+
 		Plug 'vim-airline/vim-airline'
 		Plug 'vim-airline/vim-airline-themes'
 		Plug 'morhetz/gruvbox'
@@ -40,46 +52,67 @@ endif
 		Plug 'tpope/vim-commentary'
 
 		" ncm2 and dependencies
-		Plug 'roxma/nvim-yarp'
-		Plug 'ncm2/ncm2'
-		Plug 'ncm2/ncm2-bufword'
-		Plug 'ncm2/ncm2-path'
-		" ncm2 clang service
-		Plug 'ncm2/ncm2-pyclang'
-		call plug#end()
+		if s:completion == "ncm"
+			Plug 'roxma/nvim-yarp'
+			Plug 'ncm2/ncm2'
+			Plug 'ncm2/ncm2-bufword'
+			Plug 'ncm2/ncm2-path'
+			" ncm2 clang service
+			Plug 'ncm2/ncm2-pyclang'
+		endif
 
-" == ncm2 ==
+		if s:completion == "ale"
+			Plug 'dense-analysis/ale'
+		endif 
 
-	" enable ncm2 for all buffers
-	autocmd BufEnter * call ncm2#enable_for_buffer()
+	call plug#end()
 
-	" IMPORTANT: :help Ncm2PopupOpen for more information
-	set completeopt=noinsert,menuone,noselect
+" ------------------------------------------------------------------------------
+" ncm2 
 
-	" Use <TAB> to select the popup menu:
-	inoremap <expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
-	inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
-	
-	" Prevent the new line after completion menu Enter:
-	inoremap <expr> <CR> (pumvisible() ? "\<c-y>\ " : "\<CR>")
+	if s:completion == "ncm"
+		" enable ncm2 for all buffers
+		autocmd BufEnter * call ncm2#enable_for_buffer()
 
-	" ncm2-pyclang settings
-	" if the libclang was not found, use this to specify the correct path:
-	"	g:ncm2_pyclang#library_path=...
-	
-	" Project settings:
-	" 1) Compilation database
-	" 	 CMake settings to generate such file -> -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-	"
-	" let g:ncm2_pyclang#database_path = [
-	" 			\ 'compile_commands.json',
-	" 			\ 'build/compile_commands.json'
-	" 			\ ]
+		" IMPORTANT: :help Ncm2PopupOpen for more information
+		set completeopt=noinsert,menuone,noselect
 
-	" Goto declaration
-	autocmd FileType c,cpp nnoremap <buffer> <f12> :<c-u>call ncm2_pyclang#goto_declaration()<cr>
+		" Use <TAB> to select the popup menu:
+		inoremap <expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
+		inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
 
-" == Bindings ==
+		" Prevent the new line after completion menu Enter:
+		inoremap <expr> <CR> (pumvisible() ? "\<c-y>\ " : "\<CR>")
+
+		" ncm2-pyclang settings
+		" if the libclang was not found, use this to specify the correct path:
+		"	g:ncm2_pyclang#library_path=...
+
+		" Project settings:
+		" 1) Compilation database
+		" 	 CMake settings to generate such file -> -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+		"
+		" let g:ncm2_pyclang#database_path = [
+		" 			\ 'compile_commands.json',
+		" 			\ 'build/compile_commands.json'
+		" 			\ ]
+
+		" Goto declaration
+		autocmd FileType c,cpp nnoremap <buffer> <f12> :<c-u>call ncm2_pyclang#goto_declaration()<cr>
+	endif
+
+" ------------------------------------------------------------------------------
+"  Ale
+
+	if s:completion == "ale"
+		let g:ale_linters = {'cpp': ['clangd']}
+	endif
+
+" ------------------------------------------------------------------------------
+" Bindings 
+
+	let mapleader="\ "
+
 	" Snippets
 	nmap <Leader>-- o<esc>0D2a/<esc>77a-<esc>
 	nmap <Leader>head <Leader>--2o<esc>75a-<esc>kA<Tab>
@@ -87,6 +120,10 @@ endif
 	" FZF fuzzy finder binding.
 	nmap <C-p> :Files .<CR> 
 	nmap <Leader>t :BTags<CR>
+
+	" python clang format.
+	" map·<C-I>·:pyf ../clang-format.py<cr>
+	" imap·<C-I>·<c-o>:pyf·<path-to-this-file>/clang-format.py<cr>
 
 	function! s:custom_all_ag()
 		call fzf#vim#ag("", {'options': ['-f']})
@@ -115,7 +152,8 @@ endif
 	inoremap <C-j> <Down>
 	inoremap <C-k> <Up>
 
-" == ctags settings ==
+" ------------------------------------------------------------------------------
+" ctags settings 
 
 	" Common ctags command.
 	let ctags_cmd = 
@@ -136,7 +174,8 @@ endif
 	" 				\echo "Tags updated: " . expand("%")
 	" aug END
 
-" == FZF Settings ==
+" ------------------------------------------------------------------------------
+" FZF Settings 
 
 	" function! PlaceFileName()
 	" 	let fileName = expand("%:t:r")
@@ -145,7 +184,8 @@ endif
 
 	" nmap <Leader>o :execute PlaceFileName()<CR>
 
-" == Auto config reload ==
+" ------------------------------------------------------------------------------
+" Buffer autocommands.
 
 	aug config_save_hook
 		" Clear the group.
@@ -155,8 +195,6 @@ endif
 		au BufWritePost *.vim so % | echo "Config reloaded: " . expand("%")
 	aug END
 
-" == Save on buffer leave ==
-
 "	aug buff_save_hook
 "		au!
 "
@@ -164,39 +202,18 @@ endif
 "		au FocusLost,BufLeave * if (&ro == 0) | w | endif
 "	aug END
 
-" == Leader ==
+" ------------------------------------------------------------------------------
+" Basic settings.
 
-	let mapleader="\ "
-
-" == Language ==
-
-	set langmenu=en_US.UTF-8
 	language en
+	set langmenu=en_US.UTF-8
+	set foldmethod=syntax nofen
+	set splitbelow splitright
+	set number relativenumber
+	set shiftwidth=2 ts=2
+	set list listchars=space:·,tab:→\ 
 
-" == Folding ==
-
-	set foldmethod=syntax
-	set nofen
-
-" == Windows and splits ==
-	set splitbelow
-	set splitright
-
-" == Line numbering ==
-
-	set number
-	set relativenumber
-
-" == Whitespace configuration ==
-
-	set ts=2
-	set shiftwidth=2
-	set list
-	set listchars=space:·,tab:→\ 
+	colorscheme gruvbox
 
 	" Highlight as error everything above 100 column.
  	match Error '/\%100v.\+/'
-
-" == Color Scheme ==
-
-	colorscheme gruvbox
