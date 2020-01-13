@@ -4,7 +4,7 @@ set secure
 " ------------------------------------------------------------------------------
 " Attemt to load project configuration.
 
-if filereadable("init.vim") && expand("%:p:h") != getcwd()
+if filereadable("init.vim") && expand("%:p:h") !=? getcwd()
 	echo "Project loaded"
 	so init.vim
 endif
@@ -51,6 +51,7 @@ endif
 		Plug 'tpope/vim-surround'
 		Plug 'tpope/vim-fugitive'
 		Plug 'tpope/vim-commentary'
+		Plug 'machakann/vim-highlightedyank'
 
 		" ncm2 and dependencies
 		if s:completion == "ncm"
@@ -77,23 +78,11 @@ endif
 
 	if s:completion == "coc"
 		" if hidden is not set, TextEdit might fail.
-		set hidden
+		" set hidden
 
 		" Some servers have issues with backup files, see #649
-		set nobackup
-		set nowritebackup
-
-		" Better display for messages
-		set cmdheight=2
-
-		" You will have bad experience for diagnostic messages when it's default 4000.
-		set updatetime=300
-
-		" don't give |ins-completion-menu| messages.
-		set shortmess+=c
-
-		" always show signcolumns
-		set signcolumn=yes
+		" set nobackup
+		" set nowritebackup
 
 		" Use tab for trigger completion with characters ahead and navigate.
 		" Use command ':verbose imap <tab>' to make sure tab is not mapped by other plugin.
@@ -264,13 +253,8 @@ endif
 	" map·<C-I>·:pyf ../clang-format.py<cr>
 	" imap·<C-I>·<c-o>:pyf·<path-to-this-file>/clang-format.py<cr>
 
-	function! s:custom_all_ag()
-		call fzf#vim#ag("", {'options': ['-f']})
-	endfunction
-
 	command! -nargs=* -bang Ag call fzf#vim#ag_raw('-f --ignore-dir={.git,.svn} ' . <q-args> . ' .')
 
-	nmap <Leader>a :execute(<sid>custom_all_ag())
 	" Terminal binding to epscape from the insert mode.
 	" Note: Breaks return from FZF menu.
 	"	tnoremap <Esc> <C-\><C-n>
@@ -295,12 +279,12 @@ endif
 " ctags settings 
 
 	" Common ctags command.
-	let ctags_cmd = 
-				\"!ctags.exe -R --c++-kinds=+p --fields=+iaS --extras=+q ".
-				\"--exclude=.git --exclude=.svn --exclude=extern --verbose=yes"
+	" let ctags_cmd = 
+	" 			\"!ctags.exe -R --c++-kinds=+p --fields=+iaS --extras=+q ".
+	" 			\"--exclude=.git --exclude=.svn --exclude=extern --verbose=yes"
 
 	" Rebuild tags for the whole project.
-	nmap <Leader>rt :exec ctags_cmd . " ./Enfusion" \| :exec ctags_cmd . " -a ./A4Gamecode"
+	" nmap <Leader>rt :exec ctags_cmd . " ./Enfusion" \| :exec ctags_cmd . " -a ./A4Gamecode"
 
 	" Auto update ctags on file save.
 	" aug ctags_save_hook
@@ -334,15 +318,20 @@ endif
 		au BufWritePost *.vim so % | echo "Config reloaded: " . expand("%")
 	aug END
 
-"	aug buff_save_hook
-"		au!
-"
-"		" if not readonly save the buffer.
-"		au FocusLost,BufLeave * if (&ro == 0) | w | endif
-"	aug END
+	aug buff_save_hook
+		au!
+
+		" if not readonly save the buffer.
+		au FocusLost,BufLeave * if (&ro == 0) | w | endif
+	aug END
 
 " ------------------------------------------------------------------------------
 " Basic settings.
+
+	set cmdheight=2
+	set updatetime=300
+	set shortmess+=c
+	set signcolumn=yes
 
 	language en
 	set langmenu=en_US.UTF-8
@@ -351,7 +340,7 @@ endif
 	set number relativenumber
 	set shiftwidth=2 ts=2
 	set list listchars=space:·,tab:→\ 
-
+	set smartcase
 	colorscheme gruvbox
 
 	" Highlight as error everything above 100 column.
