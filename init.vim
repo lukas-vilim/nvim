@@ -38,8 +38,8 @@ endif
 " ------------------------------------------------------------------------------
 " Plugins 
 	" let s:completion = "ale"
-	" let s:completion = "ncm"
-	let s:completion = "coc"
+	let s:completion = "ncm"
+	" let s:completion = "coc"
 
 	call plug#begin(s:path . '/plugged')
 
@@ -51,7 +51,13 @@ endif
 		Plug 'tpope/vim-surround'
 		Plug 'tpope/vim-fugitive'
 		Plug 'tpope/vim-commentary'
+		" Highlights yanked selection.
 		Plug 'machakann/vim-highlightedyank'
+		" Automatic quote/braces completion plugin.
+		" Plug 'jiangmiao/auto-pairs'
+
+		" This could be a nice replacement for the :Explore
+		" Plug 'vifm/vifm.vim'
 
 		" ncm2 and dependencies
 		if s:completion == "ncm"
@@ -59,15 +65,20 @@ endif
 			Plug 'ncm2/ncm2'
 			Plug 'ncm2/ncm2-bufword'
 			Plug 'ncm2/ncm2-path'
-			" ncm2 clang service
-			Plug 'ncm2/ncm2-pyclang'
+
+			" vim lsp and dependencies.
+			Plug 'prabirshrestha/async.vim'
+			Plug 'prabirshrestha/vim-lsp'
+			Plug 'ncm2/ncm2-vim-lsp'
 		endif
 
 		if s:completion == "ale"
+			" Who needs a linter when not working with web tools right...
 			Plug 'dense-analysis/ale'
 		endif 
 
 		if s:completion == "coc"
+			" A bit too heavy for me. I'll probably stick with the ncm2 for now.
 			Plug 'neoclide/coc.nvim', {'branch': 'release'}
 		endif
 
@@ -202,31 +213,43 @@ endif
 		" enable ncm2 for all buffers
 		autocmd BufEnter * call ncm2#enable_for_buffer()
 
-		" IMPORTANT: :help Ncm2PopupOpen for more information
-		set completeopt=noinsert,menuone,noselect
+		" let g:lsp_log_verbose = 1
+		" let g:lsp_log_file = 'vim-lsp.log'	" vim-lsp
 
-		" Use <TAB> to select the popup menu:
-		inoremap <expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
-		inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
+		" enable for include debug when something gets odd...
+		let g:lsp_diagnostics_enabled = 0
 
-		" Prevent the new line after completion menu Enter:
-		inoremap <expr> <CR> (pumvisible() ? "\<c-y>\ " : "\<CR>")
+		if executable('pyls')
+			" pip install python-language-server
+			" au User lsp_setup call lsp#register_server({
+			" 			\ 'name': 'pyls',
+			" 			\ 'cmd': {server_info->['pyls']},
+			" 			\ 'whitelist': ['python'],
+			" 			\ })
 
-		" ncm2-pyclang settings
-		" if the libclang was not found, use this to specify the correct path:
-		"	g:ncm2_pyclang#library_path=...
+			au User lsp_setup call lsp#register_server({
+						\ 'name': 'clangd',
+						\ 'cmd': {server_info->['clangd', '--background-index']},
+						\ 'whitelist': ['cpp', 'c', 'h', 'hpp'],
+						\ })
+		endif
 
-		" Project settings:
-		" 1) Compilation database
-		" 	 CMake settings to generate such file -> -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-		"
-		" let g:ncm2_pyclang#database_path = [
-		" 			\ 'compile_commands.json',
-		" 			\ 'build/compile_commands.json'
-		" 			\ ]
+		function! s:on_lsp_buffer_enabled() abort
+			setlocal omnifunc=lsp#complete
+			setlocal signcolumn=yes
+			nmap <buffer> gd <plug>(lsp-definition)
+			nmap <buffer> <f2> <plug>(lsp-rename)
+			" refer to doc to add more commands
+		endfunction
 
-		" Goto declaration
-		autocmd FileType c,cpp nnoremap <buffer> <f12> :<c-u>call ncm2_pyclang#goto_declaration()<cr>
+		augroup lsp_install
+			au!
+			" call s:on_lsp_buffer_enabled only for languages that has the server registered.
+			autocmd User lsp_buffer_enabled call s:on_lsp_buffer_enabled()
+		augroup END
+
+		nnoremap <Leader>d :LspDefinition<CR>
+		nnoremap <Leader>r :LspReferences<CR>
 	endif
 
 " ------------------------------------------------------------------------------
@@ -241,21 +264,75 @@ endif
 
 	let mapleader="\ "
 
+	nnoremap <Leader>v :e $MYVIMRC<cr>
+
+	let s:last_switch_op = "buf"
+	aug smart_switch
+		au!
+
+		" todo: catch the window close and then fallback to buffer mode.
+		" todo: catch the windows temp windows like fzf... and make them noop.
+		au WinEnter * let s:last_switch_op = "win" | echo "win"
+		au BufWinLeave * let s:last_switch_op = "buff" | echo "buf"
+	aug END
+
+	" Switches to the last buffer or window. Depends on what was the last switch
+	" OP.
+	func! SwitchBufOrWin()
+		if s:last_switch_op =~ "buf"
+			:b#
+		elseif s:last_switch_op =~ "win"
+			wincmd p
+		endif
+	endfunc
+
+	nnoremap <tab> :call SwitchBufOrWin()<cr>
+
 	" Snippets
 	nmap <Leader>-- o<esc>0D2a/<esc>77a-<esc>
 	nmap <Leader>head <Leader>--2o<esc>75a-<esc>kA<Tab>
 
 	" FZF fuzzy finder binding.
-	nmap <C-p> :Files .<CR> 
-	nmap <Leader>t :BTags<CR>
+	
+	" [Buffers] Jump to the existing window if possible
+	let g:fzf_buffers_jump = 1 
+
+	command! -bang -nargs=* Rg
+				\ call fzf#vim#grep(
+				\   'rg --column --line-number --no-heading --color=always' . 
+				\   ' --smart-case --follow '.shellescape(<q-args>), 1,<bang>0)
+
+	nnoremap <Leader>p :Files .<CR> 
+	nnoremap <Leader>b :Buffers .<CR> 
+	nnoremap <Leader>t :BTags<CR>
+	nnoremap <Leader>R :Rg <c-r>=expand("<cword>")<cr>
 
 	" python clang format.
 	" map·<C-I>·:pyf ../clang-format.py<cr>
 	" imap·<C-I>·<c-o>:pyf·<path-to-this-file>/clang-format.py<cr>
 
+	let s:last_fold_level = 0
+	func! FoldToLevel()
+		set foldenable
+		if v:count != 0
+			let s:last_fold_level = v:count
+		endif
+
+		let &foldlevel = s:last_fold_level
+	endfunc
+
+	nnoremap <Leader>f :call FoldToLevel()<cr>
+
 	command! -nargs=* -bang Ag call fzf#vim#ag_raw('-f --ignore-dir={.git,.svn} ' . <q-args> . ' .')
 
-	" Terminal binding to epscape from the insert mode.
+	" Use <TAB> to select the popup menu:
+	inoremap <expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
+	inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
+
+	" Prevent the new line after completion menu Enter:
+	inoremap <expr> <CR> (pumvisible() ? "\<c-y>\ " : "\<CR>")
+
+	" Terminal binding to escape from the insert mode.
 	" Note: Breaks return from FZF menu.
 	"	tnoremap <Esc> <C-\><C-n>
 
@@ -318,15 +395,20 @@ endif
 		au BufWritePost *.vim so % | echo "Config reloaded: " . expand("%")
 	aug END
 
-	aug buff_save_hook
+	aug file_hooks
 		au!
 
-		" if not readonly save the buffer.
-		au FocusLost,BufLeave * if (&ro == 0) | w | endif
+		au FocusGained,BufEnter * :silent! checktime
+		au FocusLost,WinLeave * :silent! w
+		au FileType c,cpp,cs,java set commentstring=//\ %s
+		au CursorHold * checktime
 	aug END
 
 " ------------------------------------------------------------------------------
 " Basic settings.
+
+	" IMPORTANT: :help Ncm2PopupOpen for more information
+	set completeopt=noinsert,menuone,noselect
 
 	set cmdheight=2
 	set updatetime=300
@@ -334,13 +416,14 @@ endif
 	set signcolumn=yes
 
 	language en
+	set autowriteall autoread
 	set langmenu=en_US.UTF-8
-	set foldmethod=syntax nofen
+	set foldmethod=syntax nofen foldopen-=block,hor
 	set splitbelow splitright
 	set number relativenumber
 	set shiftwidth=2 ts=2
 	set list listchars=space:·,tab:→\ 
-	set smartcase
+	set ignorecase smartcase
 	colorscheme gruvbox
 
 	" Highlight as error everything above 100 column.
