@@ -288,6 +288,10 @@ endif
 
 	nnoremap <tab> :call SwitchBufOrWin()<cr>
 
+	" Fold jumping with alt key.
+	nnoremap <M-j> zj
+	nnoremap <M-k> zk
+
 	" Snippets
 	nmap <Leader>-- o<esc>0D2a/<esc>77a-<esc>
 	nmap <Leader>head <Leader>--2o<esc>75a-<esc>kA<Tab>
