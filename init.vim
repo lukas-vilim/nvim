@@ -288,7 +288,10 @@ endif
 	set shortmess+=c
 	set signcolumn=yes
 
-	language en
+	if g:os =~ "Windows"
+		language en
+	endif 
+
 	set cursorline
 	set autowriteall autoread
 	set langmenu=en_US.UTF-8
@@ -299,7 +302,11 @@ endif
 	set scrolloff=5
 	set list listchars=space:·,tab:→\ 
 	set ignorecase smartcase
+	set hls
+
 	colorscheme gruvbox
+	set termguicolors
+	set bg=dark
 
 	" Highlight as error everything above 100 column.
  	match Error '/\%100v.\+/'
