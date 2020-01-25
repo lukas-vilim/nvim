@@ -3,15 +3,13 @@ set secure
 
 " ------------------------------------------------------------------------------
 " Attemt to load project configuration.
-
-if filereadable("init.vim") && expand("%:p:h") !=? getcwd()
-	echo "Project loaded"
-	so init.vim
-endif
+	if filereadable("init.vim") && expand("%:p:h") !=? getcwd()
+		echo "Project loaded"
+		so init.vim
+	endif
 
 " ------------------------------------------------------------------------------
 " OS detection
-
 	if !exists("g:os")
 		if has("win64") || has("win32") || has("win16")
 			let g:os = "Windows"
@@ -27,7 +25,6 @@ endif
 
 " ------------------------------------------------------------------------------
 " Path configuration 
-
 	" Local path
 	let s:path = fnamemodify(resolve(expand('<sfile>:p')), ':h')
 
@@ -41,13 +38,18 @@ endif
 
 		Plug 'vim-airline/vim-airline'
 		Plug 'vim-airline/vim-airline-themes'
+
 		Plug 'morhetz/gruvbox'
+
 		Plug 'junegunn/fzf'
 		Plug 'junegunn/fzf.vim'
 		Plug 'fszymanski/fzf-quickfix'
+
 		Plug 'tpope/vim-surround'
 		Plug 'tpope/vim-fugitive'
 		Plug 'tpope/vim-commentary'
+		Plug 'tpope/vim-dispatch'
+
 		" Highlights yanked selection.
 		Plug 'machakann/vim-highlightedyank'
 		" Automatic quote/braces completion plugin.
@@ -70,7 +72,6 @@ endif
 
 " ------------------------------------------------------------------------------
 " ncm2 
-
 	" enable ncm2 for all buffers
 	autocmd BufEnter * call ncm2#enable_for_buffer()
 
@@ -99,32 +100,27 @@ endif
 	function! s:on_lsp_buffer_enabled() abort
 		setlocal omnifunc=lsp#complete
 		setlocal signcolumn=yes
-		nmap <buffer> gd <plug>(lsp-definition)
-		nmap <buffer> <f2> <plug>(lsp-rename)
-		" refer to doc to add more commands
+
+		nnoremap <buffer> gd <plug>(lsp-definition)
+		nnoremap <buffer> <f2> <plug>(lsp-rename)
+		nnoremap <Leader>s <plug>(lsp-workspace-symbol)
+		nnoremap <Leader>m :LspDocumentSymbol<cr>:sleep 100ms<cr>:ccl<cr>:Quickfix<cr>
+		nnoremap <Leader>d <plug>(lsp-definition)
+		nnoremap <Leader>r <plug>(lsp-references)
 	endfunction
 
-	augroup lsp_install
+	augroup lst_enable
 		au!
 		" call s:on_lsp_buffer_enabled only for languages that has the server registered.
 		autocmd User lsp_buffer_enabled call s:on_lsp_buffer_enabled()
 	augroup END
 
-	nnoremap <Leader>d :LspDefinition<CR>
-	nnoremap <Leader>r :LspReferences<CR>
-
 " ------------------------------------------------------------------------------
-" Bindings 
-
-	let mapleader="\ "
-
-	" maybe use the switchbuf=useopen??
-	nnoremap <Leader>v :e $MYVIMRC<cr>
-
+" Window navigation 
 	let s:last_switch_op = "buf"
 	let s:last_buf = ""
 	let s:last_win = ""
-	aug smart_switch
+	aug buf_switch
 		au!
 
 		" title?
@@ -141,12 +137,12 @@ endif
 		if s:last_switch_op =~ "buf"
 			if s:last_buf != ""
 				" :b &s:last_buf
-				execute ':b ' . s:last_buf
+				" execute ':b ' . s:last_buf
 				execute ':echo ' . s:last_buf
 			endif
 		elseif s:last_switch_op =~ "win"
 			if s:last_win != ""
-				execute ':echo ' . s:last_buf
+				" execute ':echo ' . s:last_buf
 				:exe s:last_win . "wincmd w"
 			endif
 		endif
@@ -155,35 +151,13 @@ endif
 	" nnoremap <silent> <tab> :call SwitchBufOrWin()<cr>
 	nnoremap <tab> :call SwitchBufOrWin()<cr>
 
+" ------------------------------------------------------------------------------
+" Folds
 	" Fold jumping with alt key.
 	nnoremap <M-j> zj
 	nnoremap <M-k> zk
 
-	" Snippets
-	nmap <Leader>-- o<esc>0D2a/<esc>77a-<esc>
-	nmap <Leader>head <Leader>--2o<esc>75a-<esc>kA<Tab>
-
-	" FZF fuzzy finder binding.
-	
-	" [Buffers] Jump to the existing window if possible
-	let g:fzf_buffers_jump = 1 
-
-	command! -bang -nargs=* Rg
-				\ call fzf#vim#grep(
-				\   'rg --column --line-number --no-heading --color=always' . 
-				\   ' --smart-case --follow '.shellescape(<q-args>), 1,<bang>0)
-
-	nnoremap <Leader>p :Files .<CR> 
-	nnoremap <Leader>b :Buffers .<CR> 
-	nnoremap <Leader>t :BTags<CR>
-	nnoremap <Leader>R :Rg <c-r>=expand("<cword>")<cr>
-	nnoremap <Leader>s :LspWorkspaceSymbol<cr>
-	nnoremap <Leader>m :LspDocumentSymbol<cr>:sleep 50ms<cr>:ccl<cr>:Quickfix<cr>
-
-	" python clang format.
-	" map·<C-I>·:pyf ../clang-format.py<cr>
-	" imap·<C-I>·<c-o>:pyf·<path-to-this-file>/clang-format.py<cr>
-
+	" Use fold level provided by count and remember it for repetition.
 	let s:last_fold_level = 1
 	func! FoldToLevel()
 		set foldenable
@@ -196,19 +170,103 @@ endif
 
 	nnoremap <Leader>f :call FoldToLevel()<cr>
 
-	command! -nargs=* -bang Ag call fzf#vim#ag_raw('-f --ignore-dir={.git,.svn} ' . <q-args> . ' .')
+" ------------------------------------------------------------------------------
+" Snippets
+	nmap <Leader>-- o<esc>0D2a/<esc>77a-<esc>
+	nmap <Leader>head <Leader>--2o<esc>75a-<esc>kA<Tab>
 
+" ------------------------------------------------------------------------------
+" Searching
+	"Use ripgrep when installed.
+	if executable('rg')
+		let $FZF_DEFAULT_COMMAND = 
+					\'rg --files --hidden --follow '.
+					\'--glob "!.git" --glob "!.svn" --glob "!.hg"'
+
+		command! -bang -nargs=* Rg
+					\ call fzf#vim#grep(
+					\   'rg --column --line-number --no-heading --color=always' . 
+					\   ' --smart-case --follow --glob "!.git" --glob "!.svn" '
+					\   '--glob "!.hg" '.shellescape(<q-args>), 1,<bang>0)
+
+
+		nnoremap <Leader>R :Rg <c-r>=expand("<cword>")<cr>
+	endif
+
+	" Use silver searcher when installed.
+	if executable('ag')
+		command! -nargs=* -bang Ag call fzf#vim#ag_raw('-f --ignore-dir={.git,.svn} ' . <q-args> . ' .')
+	endif
+
+	" Try to make a fzf query for file with oposite extension.
+	function! FindHeaderOrSource()
+		let ext = expand("%:e")
+		let fileName = expand("%:t:r")
+
+		if ext =~ 'cpp' 
+			let ext = 'h'
+		elseif ext =~ 'h'
+			let ext = 'cpp'
+		else 
+			let ext = ''
+		endif
+
+		exec ':FZF --query=' . fileName . '.' . ext
+	endfunction
+
+	nnoremap <Leader>p :Files .<cr> 
+	nnoremap <Leader>b :Buffers .<cr> 
+	nnoremap <Leader>t :BTags<cr>
+	nnoremap <Leader>l :BLines<cr>
+	nnoremap <Leader>o :call FindHeaderOrSource()<CR>
+
+" ------------------------------------------------------------------------------
+" Utils
+	function ClearQuickfixList()
+		call setqflist([])
+	endfunction
+	command! ClearQuickfixList call ClearQuickfixList()
+
+" ------------------------------------------------------------------------------
+" Build tools
+	let s:build_tools = [':make']
+	let s:build_tool_active = get(s:build_tools, 0, ':make')
+
+	func! BuildToolsAdd(tool)
+		call add(s:build_tools, a:tool)
+	endfunc
+
+	func! s:BuildToolsSelect(tool, bang)
+		let s:build_tool_active = a:tool
+		let s:build_tool_active = substitute(s:build_tool_active, '\\ ', ' ', 'g')
+		let s:build_tool_active = substitute(s:build_tool_active, "\'", '', 'g')
+
+		if a:bang != 0
+			call s:BuildToolsBuild()
+		endif
+	endfunc
+
+	func! s:BuildToolsBuild()
+		echo s:build_tool_active
+		exec s:build_tool_active
+	endfunc
+
+	command! -nargs=1 -bang BuildToolsSelect call <SID>BuildToolsSelect(string(<q-args>), <bang>0)
+	command! -bang BuildToolsMenu call fzf#run(fzf#wrap({'source' : s:build_tools, 'sink' : 'BuildToolsSelect<bang>'}))
+	command! BuildToolsBuild call <SID>BuildToolsBuild()
+
+" ------------------------------------------------------------------------------
+" Menus
 	" Use <TAB> to select the popup menu:
 	inoremap <expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
 	inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
-
-	" Prevent the new line after completion menu Enter:
-	inoremap <expr> <CR> (pumvisible() ? "\<c-y>\ " : "\<CR>")
 
 	" Terminal binding to escape from the insert mode.
 	" Note: Breaks return from FZF menu.
 	"	tnoremap <Esc> <C-\><C-n>
 
+" ------------------------------------------------------------------------------
+" Text nevigation
 	" Remove normal mode arrow keys.
 	nmap <Up> <Nop>
 	nmap <Down> <Nop>
@@ -227,7 +285,6 @@ endif
 
 " ------------------------------------------------------------------------------
 " ctags settings 
-
 	" Common ctags command.
 	" let ctags_cmd = 
 	" 			\"!ctags.exe -R --c++-kinds=+p --fields=+iaS --extras=+q ".
@@ -248,18 +305,7 @@ endif
 	" aug END
 
 " ------------------------------------------------------------------------------
-" FZF Settings 
-
-	" function! PlaceFileName()
-	" 	let fileName = expand("%:t:r")
-	" 	exec "Files ." . fileName
-	" endfunction
-
-	" nmap <Leader>o :execute PlaceFileName()<CR>
-
-" ------------------------------------------------------------------------------
 " Buffer autocommands.
-
 	aug config_save_hook
 		" Clear the group.
 		au!
@@ -279,6 +325,12 @@ endif
 
 " ------------------------------------------------------------------------------
 " Basic settings.
+	let mapleader="\ "
+
+	" maybe use the switchbuf=useopen??
+	nnoremap <Leader>v :e $MYVIMRC<cr>
+
+	set encoding=utf-8
 
 	" IMPORTANT: :help Ncm2PopupOpen for more information
 	set completeopt=noinsert,menuone,noselect
@@ -292,21 +344,26 @@ endif
 		language en
 	endif 
 
+	set wildmenu
 	set cursorline
 	set autowriteall autoread
 	set langmenu=en_US.UTF-8
 	set foldmethod=syntax nofen foldopen-=block,hor
 	set splitbelow splitright
 	set number relativenumber
+	set matchpairs+=<:>
+	set noshowmatch
 	set shiftwidth=2 ts=2
 	set scrolloff=5
 	set list listchars=space:·,tab:→\ 
 	set ignorecase smartcase
 	set hls
+	set backspace=indent,eol,start
 
 	colorscheme gruvbox
+	" The colors look a bit more dim with the term off.
 	set termguicolors
 	set bg=dark
 
 	" Highlight as error everything above 100 column.
- 	match Error '/\%100v.\+/'
+ 	" match Error '/\%100v.\+/'
