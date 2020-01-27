@@ -1,5 +1,6 @@
 set exrc
 set secure
+let mapleader="\ "
 
 " ------------------------------------------------------------------------------
 " Attemt to load project configuration.
@@ -35,7 +36,6 @@ set secure
 " ------------------------------------------------------------------------------
 " Plugins 
 	call plug#begin(s:path . '/plugged')
-
 		Plug 'vim-airline/vim-airline'
 		Plug 'vim-airline/vim-airline-themes'
 
@@ -69,6 +69,19 @@ set secure
 		Plug 'prabirshrestha/vim-lsp'
 		Plug 'ncm2/ncm2-vim-lsp'
 	call plug#end()
+
+" ------------------------------------------------------------------------------
+"  clang format
+	func! ClangFmt()
+		let current_line = line('.')
+		let l:lines = string(current_line).':'.string(current_line + v:count)
+		exec 'pyf ' . s:path . '\tools\clang\clang-format.py'
+	endfunc
+
+	aug clang_fmg
+		au!
+		au FileType h,cpp,c,hpp nnoremap <Leader>i :call ClangFmt()<cr>
+	aug END
 
 " ------------------------------------------------------------------------------
 " ncm2 
@@ -232,6 +245,10 @@ set secure
 	let s:build_tools = [':make']
 	let s:build_tool_active = get(s:build_tools, 0, ':make')
 
+	func! BuildToolsClear()
+		let s:build_tools = []
+	endfunc
+
 	func! BuildToolsAdd(tool)
 		call add(s:build_tools, a:tool)
 	endfunc
@@ -240,6 +257,7 @@ set secure
 		let s:build_tool_active = a:tool
 		let s:build_tool_active = substitute(s:build_tool_active, '\\ ', ' ', 'g')
 		let s:build_tool_active = substitute(s:build_tool_active, "\'", '', 'g')
+		let s:build_tool_active = substitute(s:build_tool_active, "\\\"", '\"', 'g')
 
 		if a:bang != 0
 			call s:BuildToolsBuild()
@@ -247,13 +265,14 @@ set secure
 	endfunc
 
 	func! s:BuildToolsBuild()
-		echo s:build_tool_active
 		exec s:build_tool_active
 	endfunc
 
 	command! -nargs=1 -bang BuildToolsSelect call <SID>BuildToolsSelect(string(<q-args>), <bang>0)
-	command! -bang BuildToolsMenu call fzf#run(fzf#wrap({'source' : s:build_tools, 'sink' : 'BuildToolsSelect<bang>'}))
+	command! -bang Build call fzf#run(fzf#wrap({'source' : s:build_tools, 'sink' : 'BuildToolsSelect<bang>'}))
 	command! BuildToolsBuild call <SID>BuildToolsBuild()
+
+	nnoremap <F5> :BuildToolsBuild<cr>
 
 " ------------------------------------------------------------------------------
 " Menus
@@ -325,7 +344,6 @@ set secure
 
 " ------------------------------------------------------------------------------
 " Basic settings.
-	let mapleader="\ "
 
 	" maybe use the switchbuf=useopen??
 	nnoremap <Leader>v :e $MYVIMRC<cr>
@@ -348,7 +366,7 @@ set secure
 	set cursorline
 	set autowriteall autoread
 	set langmenu=en_US.UTF-8
-	set foldmethod=syntax nofen foldopen-=block,hor
+	set foldmethod=indent nofen foldopen-=block,hor foldnestmax=1
 	set splitbelow splitright
 	set number relativenumber
 	set matchpairs+=<:>
