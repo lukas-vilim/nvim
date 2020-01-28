@@ -46,6 +46,9 @@ if vim.eval('exists("g:clang_format_path")') == "1":
 # used.
 style = None
 fallback_style = None
+if vim.eval('exists("g:clang_format_style")') == "1":
+  style = vim.eval('g:clang_format_style')
+
 if vim.eval('exists("g:clang_format_fallback_style")') == "1":
   fallback_style = vim.eval('g:clang_format_fallback_style')
 

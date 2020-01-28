@@ -1,16 +1,19 @@
-set exrc
-set secure
-let mapleader="\ "
-
 " ------------------------------------------------------------------------------
-" Attemt to load project configuration.
-	if filereadable("init.vim") && expand("%:p:h") !=? getcwd()
-		echo "Project loaded"
-		so init.vim
-	endif
+" VIMRC
+	set exrc
+	set secure
 
-" ------------------------------------------------------------------------------
-" OS detection
+	let mapleader="\ "
+	nnoremap <Leader>v :e $MYVIMRC<cr>
+
+	" source any written .vim file.
+	aug config_save_hook
+		" Clear the group.
+		au!
+		" Auto reload any .vim configuration and output its name.
+		au BufWritePost *.vim so % | echo "Config reloaded: " . expand("%")
+	aug END
+
 	if !exists("g:os")
 		if has("win64") || has("win32") || has("win16")
 			let g:os = "Windows"
@@ -24,15 +27,18 @@ let mapleader="\ "
 		nmap <C-z> <Nop>
 	endif
 
-" ------------------------------------------------------------------------------
-" Path configuration 
 	" Local path
 	let s:path = fnamemodify(resolve(expand('<sfile>:p')), ':h')
 
 	" Setup path to external tools
 	let $PATH .= ";" . s:path . "/tools/ctags/"
 	let $PATH .= ";" . s:path . "/tools/fd/"
-
+" ------------------------------------------------------------------------------
+" Project
+	if filereadable("init.vim") && expand("%:p:h") !=? getcwd()
+		echo "Project loaded"
+		so init.vim
+	endif
 " ------------------------------------------------------------------------------
 " Plugins 
 	call plug#begin(s:path . '/plugged')
@@ -69,22 +75,41 @@ let mapleader="\ "
 		Plug 'prabirshrestha/vim-lsp'
 		Plug 'ncm2/ncm2-vim-lsp'
 	call plug#end()
-
 " ------------------------------------------------------------------------------
-"  clang format
+"  Formatting
+	" let g:clang_format_style = '"' . s:path . '\tools\clang\.clang-format"'
+	let g:clang_format_style = 'file'
+
 	func! ClangFmt()
 		let current_line = line('.')
 		let l:lines = string(current_line).':'.string(current_line + v:count)
-		exec 'pyf ' . s:path . '\tools\clang\clang-format.py'
+		let clang_tools_path = s:path . '\tools\clang\'
+
+		" let style_arg = '-style=\"' . clang_tools_path . '.clang-format\"'
+		" echo style_arg
+		" python import sys
+		" exec 'python sys.argv = ["' . style_arg . '"]'
+		exec 'pyf ' . clang_tools_path . 'clang-format.py'
 	endfunc
 
 	aug clang_fmg
 		au!
 		au FileType h,cpp,c,hpp nnoremap <Leader>i :call ClangFmt()<cr>
 	aug END
-
 " ------------------------------------------------------------------------------
-" ncm2 
+" Completion + ncm2 
+	" IMPORTANT: :help Ncm2PopupOpen for more information
+	set completeopt=noinsert,menuone,noselect
+
+	" Use <TAB> to select the popup menu:
+	inoremap <expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
+	inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
+
+	" Terminal binding to escape from the insert mode.
+	" Note: Breaks return from FZF menu.
+	"	tnoremap <Esc> <C-\><C-n>
+
+
 	" enable ncm2 for all buffers
 	autocmd BufEnter * call ncm2#enable_for_buffer()
 
@@ -116,10 +141,10 @@ let mapleader="\ "
 
 		nnoremap <buffer> gd <plug>(lsp-definition)
 		nnoremap <buffer> <f2> <plug>(lsp-rename)
-		nnoremap <Leader>s <plug>(lsp-workspace-symbol)
-		nnoremap <Leader>m :LspDocumentSymbol<cr>:sleep 100ms<cr>:ccl<cr>:Quickfix<cr>
-		nnoremap <Leader>d <plug>(lsp-definition)
-		nnoremap <Leader>r <plug>(lsp-references)
+		nnoremap <buffer> <Leader>s <plug>(lsp-workspace-symbol)
+		nnoremap <buffer> <Leader>m :LspDocumentSymbol<cr>:sleep 100ms<cr>:ccl<cr>:Quickfix<cr>
+		nnoremap <buffer> <Leader>d <plug>(lsp-definition)
+		nnoremap <buffer> <Leader>r <plug>(lsp-references)
 	endfunction
 
 	augroup lst_enable
@@ -127,45 +152,53 @@ let mapleader="\ "
 		" call s:on_lsp_buffer_enabled only for languages that has the server registered.
 		autocmd User lsp_buffer_enabled call s:on_lsp_buffer_enabled()
 	augroup END
-
 " ------------------------------------------------------------------------------
-" Window navigation 
-	let s:last_switch_op = "buf"
-	let s:last_buf = ""
-	let s:last_win = ""
-	aug buf_switch
-		au!
+" UI and Windows
+	colorscheme gruvbox
 
-		" title?
-		" todo: catch the window close and then fallback to buffer mode.
-		" todo: catch the windows temp windows like fzf... and make them noop.
-		au WinEnter * if &ft != 'fzf' | let s:last_switch_op = "win" | let s:last_win = winnr("#") | endif
-		au BufWinLeave * if &ft != 'fzf' | let s:last_switch_op = "buff" | let s:last_buf = bufnr("#") | endif
-		" aut WinEnter * echo &ft
-	aug END
+	" The colors look a bit more dim with the term off.
+	set termguicolors
+	set bg=dark
+	
+	if g:os =~ "Windows"
+		language en
+	endif 
 
-	" Switches to the last buffer or window. Depends on what was the last switch
-	" OP.
-	func! SwitchBufOrWin()
-		if s:last_switch_op =~ "buf"
-			if s:last_buf != ""
-				" :b &s:last_buf
-				" execute ':b ' . s:last_buf
-				execute ':echo ' . s:last_buf
-			endif
-		elseif s:last_switch_op =~ "win"
-			if s:last_win != ""
-				" execute ':echo ' . s:last_buf
-				:exe s:last_win . "wincmd w"
-			endif
-		endif
-	endfunc
+	set encoding=utf-8
+	set langmenu=en_US.UTF-8
 
-	" nnoremap <silent> <tab> :call SwitchBufOrWin()<cr>
-	nnoremap <tab> :call SwitchBufOrWin()<cr>
+	" Highlight as error everything above 100 column.
+ 	" match Error '/\%100v.\+/'
 
+	set splitbelow splitright
+	set cursorline number relativenumber
+
+	set wildmenu
+	set cmdheight=2
+	set updatetime=300
+	set shortmess+=c
+	set signcolumn=yes
+
+	set matchpairs+=<:>
+	set shiftwidth=2 ts=2
+	set scrolloff=5
+	set list listchars=space:·,tab:→\ 
+
+	" Switch to previous buffer.
+	nnoremap <tab> :b#<cr>
+
+	" Stop window from resizing.
+	set noequalalways
 " ------------------------------------------------------------------------------
 " Folds
+	set foldmethod=indent nofen foldopen-=block,hor foldnestmax=1
+
+	" custom fold text function.
+	func! FoldText()
+		return '+-- ' . string(v:foldend - v:foldstart) . ' lines '
+	endfunc
+	set foldtext=FoldText()
+
 	" Fold jumping with alt key.
 	nnoremap <M-j> zj
 	nnoremap <M-k> zk
@@ -182,14 +215,14 @@ let mapleader="\ "
 	endfunc
 
 	nnoremap <Leader>f :call FoldToLevel()<cr>
-
 " ------------------------------------------------------------------------------
 " Snippets
 	nmap <Leader>-- o<esc>0D2a/<esc>77a-<esc>
 	nmap <Leader>head <Leader>--2o<esc>75a-<esc>kA<Tab>
-
 " ------------------------------------------------------------------------------
 " Searching
+	set ignorecase smartcase noshowmatch hls
+
 	"Use ripgrep when installed.
 	if executable('rg')
 		let $FZF_DEFAULT_COMMAND = 
@@ -199,7 +232,7 @@ let mapleader="\ "
 		command! -bang -nargs=* Rg
 					\ call fzf#vim#grep(
 					\   'rg --column --line-number --no-heading --color=always' . 
-					\   ' --smart-case --follow --glob "!.git" --glob "!.svn" '
+					\   ' --smart-case --follow --glob "!.git" --glob "!.svn" ' .
 					\   '--glob "!.hg" '.shellescape(<q-args>), 1,<bang>0)
 
 
@@ -232,14 +265,12 @@ let mapleader="\ "
 	nnoremap <Leader>t :BTags<cr>
 	nnoremap <Leader>l :BLines<cr>
 	nnoremap <Leader>o :call FindHeaderOrSource()<CR>
-
 " ------------------------------------------------------------------------------
 " Utils
 	function ClearQuickfixList()
 		call setqflist([])
 	endfunction
 	command! ClearQuickfixList call ClearQuickfixList()
-
 " ------------------------------------------------------------------------------
 " Build tools
 	let s:build_tools = [':make']
@@ -273,19 +304,8 @@ let mapleader="\ "
 	command! BuildToolsBuild call <SID>BuildToolsBuild()
 
 	nnoremap <F5> :BuildToolsBuild<cr>
-
 " ------------------------------------------------------------------------------
-" Menus
-	" Use <TAB> to select the popup menu:
-	inoremap <expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
-	inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
-
-	" Terminal binding to escape from the insert mode.
-	" Note: Breaks return from FZF menu.
-	"	tnoremap <Esc> <C-\><C-n>
-
-" ------------------------------------------------------------------------------
-" Text nevigation
+" Text navigation
 	" Remove normal mode arrow keys.
 	nmap <Up> <Nop>
 	nmap <Down> <Nop>
@@ -298,12 +318,23 @@ let mapleader="\ "
 	imap <Left> <Nop>
 	imap <Right> <Nop>
 
-	inoremap <C-l> <Right>
-	inoremap <C-j> <Down>
-	inoremap <C-k> <Up>
-
+	" inoremap <C-l> <Right>
+	" inoremap <C-j> <Down>
+	" inoremap <C-k> <Up>
 " ------------------------------------------------------------------------------
-" ctags settings 
+" Text manipulation
+	set backspace=indent,eol,start
+
+	" Consistent yank.
+	nnoremap Y y$
+
+	" One hit macro play.
+	nnoremap Q @q
+" ------------------------------------------------------------------------------
+" Tags
+	let g:gutentags_project_root = 'c:/!bi/'
+	let g:gutentags_resolve_symlinks = 1
+
 	" Common ctags command.
 	" let ctags_cmd = 
 	" 			\"!ctags.exe -R --c++-kinds=+p --fields=+iaS --extras=+q ".
@@ -322,16 +353,9 @@ let mapleader="\ "
 	" 				\silent exec ctags_cmd . " -a " . expand("%") | 
 	" 				\echo "Tags updated: " . expand("%")
 	" aug END
-
 " ------------------------------------------------------------------------------
-" Buffer autocommands.
-	aug config_save_hook
-		" Clear the group.
-		au!
-
-		" Auto reload any .vim configuration and output its name.
-		au BufWritePost *.vim so % | echo "Config reloaded: " . expand("%")
-	aug END
+" Buffers
+	set autowriteall autoread
 
 	aug file_hooks
 		au!
@@ -341,47 +365,3 @@ let mapleader="\ "
 		au FileType c,cpp,cs,java set commentstring=//\ %s
 		au CursorHold * checktime
 	aug END
-
-" ------------------------------------------------------------------------------
-" Basic settings.
-
-	" maybe use the switchbuf=useopen??
-	nnoremap <Leader>v :e $MYVIMRC<cr>
-
-	set encoding=utf-8
-
-	" IMPORTANT: :help Ncm2PopupOpen for more information
-	set completeopt=noinsert,menuone,noselect
-
-	set cmdheight=2
-	set updatetime=300
-	set shortmess+=c
-	set signcolumn=yes
-
-	if g:os =~ "Windows"
-		language en
-	endif 
-
-	set wildmenu
-	set cursorline
-	set autowriteall autoread
-	set langmenu=en_US.UTF-8
-	set foldmethod=indent nofen foldopen-=block,hor foldnestmax=1
-	set splitbelow splitright
-	set number relativenumber
-	set matchpairs+=<:>
-	set noshowmatch
-	set shiftwidth=2 ts=2
-	set scrolloff=5
-	set list listchars=space:·,tab:→\ 
-	set ignorecase smartcase
-	set hls
-	set backspace=indent,eol,start
-
-	colorscheme gruvbox
-	" The colors look a bit more dim with the term off.
-	set termguicolors
-	set bg=dark
-
-	" Highlight as error everything above 100 column.
- 	" match Error '/\%100v.\+/'
