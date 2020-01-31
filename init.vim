@@ -64,6 +64,10 @@
 		" This could be a nice replacement for the :Explore
 		" Plug 'vifm/vifm.vim'
 
+		" Multiple highlights of chosen keywords.
+		" Plug 't9md/vim-quickhl'
+		" nnoremap <Leader>H <Plug>(quickhl-manual-this-whole-word)
+
 		" ncm2 and dependencies
 		Plug 'roxma/nvim-yarp'
 		Plug 'ncm2/ncm2'
@@ -185,7 +189,52 @@
 	set list listchars=space:·,tab:→\ 
 
 	" Switch to previous buffer.
-	nnoremap <tab> :b#<cr>
+	" nnoremap <tab> :b#<cr>
+
+	highlight Hg0 ctermbg=Black guibg=Black
+	highlight Hg1 ctermbg=red guibg=red
+	highlight Hg2 ctermbg=green guibg=green
+	highlight Hg3 ctermbg=blue guibg=blue
+
+	function! s:get_visual_selection()
+		let [line_start, column_start] = getpos("'<")[1:2]
+		let [line_end, column_end] = getpos("'>")[1:2]
+		let lines = getline(line_start, line_end)
+		if len(lines) == 0
+			return ''
+		endif
+
+		let lines[-1] = lines[-1][: column_end - (&selection == 'inclusive' ? 1 : 2)]
+		let lines[0] = lines[0][column_start - 1:]
+
+		return join(lines, "\n")
+	endfunction
+
+	let s:highlight_list = []
+	func! Highlight(IsVisualMode)
+		" Visual mode check.
+		if IsVisualMode == 1
+			let pattern = s:get_visual_selection()
+		else
+			let pattern = expand('<cword>')
+		endif
+
+		let group = input('Highlight group number (0..3):')
+		let id = matchadd('Hg'.group, pattern)
+		call add(s:highlight_list, id)
+	endfunc
+
+	func! ClearHighlights()
+		for id in s:highlight_list
+			call matchdelete(id)
+		endfor
+
+		let s:highlight_list = []
+	endfunc
+
+	nnoremap <Leader>h :call Highlight(0)<cr>
+	vnoremap <Leader>h :<c-u>call Highlight(1)<cr>
+	nnoremap <Leader>H :call ClearHighlights()<cr>
 
 	" Stop window from resizing.
 	set noequalalways
@@ -336,12 +385,12 @@
 	let g:gutentags_resolve_symlinks = 1
 
 	" Common ctags command.
-	" let ctags_cmd = 
-	" 			\"!ctags.exe -R --c++-kinds=+p --fields=+iaS --extras=+q ".
-	" 			\"--exclude=.git --exclude=.svn --exclude=extern --verbose=yes"
+	let ctags_cmd = 
+				\"!ctags.exe -R --c++-kinds=+p --fields=+iaS --extras=+q ".
+				\"--exclude=.git --exclude=.svn --exclude=extern --verbose=yes"
 
 	" Rebuild tags for the whole project.
-	" nmap <Leader>rt :exec ctags_cmd . " ./Enfusion" \| :exec ctags_cmd . " -a ./A4Gamecode"
+	nmap <Leader>rt :exec ctags_cmd . " ./Enfusion" \| :exec ctags_cmd . " -a ./A4Gamecode"
 
 	" Auto update ctags on file save.
 	" aug ctags_save_hook
