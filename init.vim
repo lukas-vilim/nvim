@@ -34,6 +34,21 @@
 	let $PATH .= ";" . s:path . "/tools/ctags/"
 	let $PATH .= ";" . s:path . "/tools/fd/"
 " ------------------------------------------------------------------------------
+"  Utils
+	function! s:get_visual_selection()
+		let [line_start, column_start] = getpos("'<")[1:2]
+		let [line_end, column_end] = getpos("'>")[1:2]
+		let lines = getline(line_start, line_end)
+		if len(lines) == 0
+			return ''
+		endif
+
+		let lines[-1] = lines[-1][: column_end - (&selection == 'inclusive' ? 1 : 2)]
+		let lines[0] = lines[0][column_start - 1:]
+
+		return join(lines, "\n")
+	endfunction
+" ------------------------------------------------------------------------------
 " Project
 	if filereadable("init.vim") && expand("%:p:h") !=? getcwd()
 		echo "Project loaded"
@@ -55,6 +70,7 @@
 		Plug 'tpope/vim-fugitive'
 		Plug 'tpope/vim-commentary'
 		Plug 'tpope/vim-dispatch'
+		Plug 'tpope/vim-obsession'
 
 		" Highlights yanked selection.
 		Plug 'machakann/vim-highlightedyank'
@@ -191,50 +207,97 @@
 	" Switch to previous buffer.
 	" nnoremap <tab> :b#<cr>
 
+	let s:hg_list= []
+
 	highlight Hg0 ctermbg=Black guibg=Black
-	highlight Hg1 ctermbg=red guibg=red
-	highlight Hg2 ctermbg=green guibg=green
-	highlight Hg3 ctermbg=blue guibg=blue
+	highlight Hg1 ctermbg=DarkRed guibg=DarkRed
+	highlight Hg2 ctermbg=DarkGreen guibg=DarkGreen
+	highlight Hg3 ctermbg=DarkBlue guibg=DarkBlue
+	highlight Hg4 ctermbg=DarkMagenta guibg=DarkMagenta
+	highlight Hg5 ctermbg=DarkYellow guibg=DarkYellow
+	highlight Hg6 ctermbg=Gray guibg=Gray
+	highlight Hg7 ctermbg=Yellow guibg=Yellow
+	highlight Hg8 ctermbg=Brown guibg=Brown
+	highlight Hg9 ctermbg=Magenta guibg=Magenta
 
-	function! s:get_visual_selection()
-		let [line_start, column_start] = getpos("'<")[1:2]
-		let [line_end, column_end] = getpos("'>")[1:2]
-		let lines = getline(line_start, line_end)
-		if len(lines) == 0
-			return ''
-		endif
+	let g:hg_inc_default = 1
 
-		let lines[-1] = lines[-1][: column_end - (&selection == 'inclusive' ? 1 : 2)]
-		let lines[0] = lines[0][column_start - 1:]
-
-		return join(lines, "\n")
-	endfunction
-
-	let s:highlight_list = []
-	func! Highlight(IsVisualMode)
+	" mode: 
+	" 0 => motion
+	" 1 => normal <cword> 
+	" 2 => visual mode 
+	func! s:hg_push_selection(mode, incremental)
 		" Visual mode check.
-		if IsVisualMode == 1
+		if a:mode == 0
+			" yank to z regster.
+			norm! `[v`]"zy
+			let pattern = getreg('z')
+		elseif a:mode == 1
+			let pattern = expand('<cword>')
+		elseif a:mode == 2
 			let pattern = s:get_visual_selection()
 		else
-			let pattern = expand('<cword>')
+			echoerr 'No mode set!'
+			return
 		endif
 
-		let group = input('Highlight group number (0..3):')
-		let id = matchadd('Hg'.group, pattern)
-		call add(s:highlight_list, id)
+		call s:hg_push(pattern, a:incremental)
 	endfunc
 
-	func! ClearHighlights()
-		for id in s:highlight_list
-			call matchdelete(id)
-		endfor
+	func! s:hg_push(pattern, incremental)
+		if a:incremental == 1
+			let group = string(len(s:hg_list))
+		else
+			let group = input('Highlight group number (0..9):')
+		endif
 
-		let s:highlight_list = []
+		if group > 9
+			echoerr "Ran out of highlight groups!"
+			return
+		endif
+
+		let id = matchadd('Hg'.group, a:pattern)
+		call add(s:hg_list, id)
 	endfunc
 
-	nnoremap <Leader>h :call Highlight(0)<cr>
-	vnoremap <Leader>h :<c-u>call Highlight(1)<cr>
-	nnoremap <Leader>H :call ClearHighlights()<cr>
+	func! s:hg_push_inc(mode)
+		call s:hg_push_selection(a:mode, 1)
+	endfunc
+
+	func! s:hg_clear(force)
+		if a:force == 1
+			let matches = getmatches()
+			for match in matches
+				call matchdelete(match['id'])
+			endfor
+		else
+			for id in s:hg_list
+				call matchdelete(id)
+			endfor
+		endif
+
+		let s:hg_list = []
+	endfunc
+
+	func! s:hg_pop()
+		if empty(s:hg_list)
+			return
+		endif
+
+		let last = s:hg_list[-1]
+		call matchdelete(last)
+	endfunc
+
+	command! HgPop call s:hg_pop()
+	command! -bang HgClear call s:hg_clear(<bang>0)
+	command! -nargs=1 -bang HgAdd call s:hg_push('<args>', <bang>0)
+
+	nnoremap <Plug>(n-hg-inc-add) :set opfunc=<sid>hg_push_inc<cr>g@
+	nnoremap <Plug>(n-hg-add) :call s:hg_push(1, g:hg_inc_default)<cr>
+	vnoremap <Plug>(i-hg-add) :<c-u>call s:hg_push(2, g:hg_inc_default)<cr>
+
+	nmap <Leader>h <Plug>(n-hg-inc-add)
+	vmap <Leader>h <Plug>(i-hg-add)
 
 	" Stop window from resizing.
 	set noequalalways
@@ -267,7 +330,7 @@
 " ------------------------------------------------------------------------------
 " Snippets
 	nmap <Leader>-- o<esc>0D2a/<esc>77a-<esc>
-	nmap <Leader>head <Leader>--2o<esc>75a-<esc>kA<Tab>
+	" nmap <Leader>head <Leader>--2o<esc>75a-<esc>kA<Tab>
 " ------------------------------------------------------------------------------
 " Searching
 	set ignorecase smartcase noshowmatch hls
