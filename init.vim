@@ -47,11 +47,25 @@
 		return join(lines, "\n")
 	endfunction
 " Project
-	if filereadable("init.vim") && expand("%:p:h") !=? getcwd()
-		echo "Project loaded"
-		so init.vim
-	endif
+	func! s:source_project()
+		if filereadable("init.vim") && expand("%:p:h") !=? getcwd()
+			echo "Project loaded"
+			so init.vim
+		endif
+	endfunc
+
+	command! SourceProject call s:source_project()
+	
+	aug project
+		au!
+		au DirChanged * SourceProject
+	aug END
+
+	SourceProject
 " Plugins 
+	" Prevents the annoyance of inconsisten indent setting differing on file type.
+	filetype plugin indent off
+
 	call plug#begin(s:path . '/plugged')
 		Plug 'vim-airline/vim-airline'
 		Plug 'vim-airline/vim-airline-themes'
@@ -118,11 +132,6 @@
 	" Use <TAB> to select the popup menu:
 	inoremap <expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
 	inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
-
-	" Terminal binding to escape from the insert mode.
-	" Note: Breaks return from FZF menu.
-	"	tnoremap <Esc> <C-\><C-n>
-
 
 	" enable ncm2 for all buffers
 	autocmd BufEnter * call ncm2#enable_for_buffer()
@@ -193,7 +202,7 @@
 	set signcolumn=yes
 
 	set matchpairs+=<:>
-	set shiftwidth=2 ts=2
+	set shiftwidth=2 ts=2 noexpandtab nosmarttab
 	set scrolloff=5
 	set list listchars=space:·,tab:→\ 
 
@@ -294,6 +303,23 @@
 
 	" Stop window from resizing.
 	set noequalalways
+
+	" Run terminal and setup mappings.
+	func! s:run_terminal()
+		terminal
+
+		" Terminal binding to escape from the insert mode.
+		" Note: Breaks return from FZF menu if setup globally.
+		tnoremap <buffer> <Esc> <C-\><C-n>
+		tnoremap <buffer> <C-w>l <C-\><C-n><C-w>l
+		tnoremap <buffer> <C-w>h <C-\><C-n><C-w>h
+		tnoremap <buffer> <C-w>j <C-\><C-n><C-w>j
+		tnoremap <buffer> <C-w>k <C-\><C-n><C-w>k
+		tnoremap <buffer> <C-u> <C-\><C-n><C-u>
+		tnoremap <buffer> <C-d> <C-\><C-n><C-d>
+	endfunc
+
+	command! Term call s:run_terminal()
 " Folds
 	set foldmethod=indent nofen foldopen-=block,hor foldnestmax=1
 
