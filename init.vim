@@ -1,6 +1,8 @@
-" VIMRC
+" VIMRC {{{
 	set exrc
-	set secure
+	" set secure
+
+	set modeline modelines=5 mle
 
 	let mapleader="\ "
 	nnoremap <Leader>v :e $MYVIMRC<cr>
@@ -32,7 +34,8 @@
 	" Setup path to external tools
 	let $PATH .= ";" . s:path . "/tools/ctags/"
 	let $PATH .= ";" . s:path . "/tools/fd/"
-"  Utils
+	" }}}
+" Utils {{{
 	function! s:get_visual_selection()
 		let [line_start, column_start] = getpos("'<")[1:2]
 		let [line_end, column_end] = getpos("'>")[1:2]
@@ -46,7 +49,8 @@
 
 		return join(lines, "\n")
 	endfunction
-" Project
+	" }}}
+" Project {{{
 	func! s:source_project()
 		if filereadable("init.vim") && expand("%:p:h") !=? getcwd()
 			echo "Project loaded"
@@ -62,7 +66,8 @@
 	aug END
 
 	SourceProject
-" Plugins 
+	"}}}
+" Plugins {{{
 	" Prevents the annoyance of inconsisten indent setting differing on file type.
 	filetype plugin indent off
 
@@ -105,7 +110,8 @@
 		Plug 'prabirshrestha/vim-lsp'
 		Plug 'ncm2/ncm2-vim-lsp'
 	call plug#end()
-"  Formatting
+	"}}}
+"  Formatting {{{
 	" let g:clang_format_style = '"' . s:path . '\tools\clang\.clang-format"'
 	let g:clang_format_style = 'file'
 
@@ -125,7 +131,8 @@
 		au!
 		au FileType h,cpp,c,hpp nnoremap <Leader>i :call ClangFmt()<cr>
 	aug END
-" Completion + ncm2 
+	"}}}
+" Completion + ncm2 {{{
 	" IMPORTANT: :help Ncm2PopupOpen for more information
 	set completeopt=noinsert,menuone,noselect
 
@@ -175,7 +182,9 @@
 		" call s:on_lsp_buffer_enabled only for languages that has the server registered.
 		autocmd User lsp_buffer_enabled call s:on_lsp_buffer_enabled()
 	augroup END
-" UI and Windows
+
+	"}}}
+" UI and Windows {{{
 	colorscheme gruvbox
 
 	" The colors look a bit more dim with the term off.
@@ -320,7 +329,8 @@
 	endfunc
 
 	command! Term call s:run_terminal()
-" Folds
+	"}}}
+" Folds {{{
 	set foldmethod=indent nofen foldopen-=block,hor foldnestmax=1
 
 	" custom fold text function.
@@ -328,6 +338,10 @@
 		return '+-- ' . string(v:foldend - v:foldstart) . ' lines '
 	endfunc
 	set foldtext=FoldText()
+
+	func! FoldTextWithFirstLine()
+		return substitute(getline(v:foldstart), '{', '', 'g') . ' [' . string(v:foldend - v:foldstart) . '] --'
+	endfunc
 
 	" Fold jumping with alt key.
 	nnoremap <M-j> zj
@@ -345,10 +359,12 @@
 	endfunc
 
 	nnoremap <Leader>f :call FoldToLevel()<cr>
-" Snippets
+	"}}}
+" Snippets {{{
 	nmap <Leader>-- o<esc>0D2a/<esc>77a-<esc>
 	" nmap <Leader>head <Leader>--2o<esc>75a-<esc>kA<Tab>
-" Searching
+	" }}}
+" Searching {{{
 	set ignorecase smartcase noshowmatch hls
 
 	"Use ripgrep when installed.
@@ -393,12 +409,14 @@
 	nnoremap <Leader>t :BTags<cr>
 	nnoremap <Leader>l :BLines<cr>
 	nnoremap <Leader>o :call FindHeaderOrSource()<CR>
-" Utils
+	"}}}
+" Utils {{{
 	function ClearQuickfixList()
 		call setqflist([])
 	endfunction
 	command! ClearQuickfixList call ClearQuickfixList()
-" Build tools
+	"}}}
+" Build tools {{{
 	let s:build_tools = [':make']
 	let s:build_tool_active = get(s:build_tools, 0, ':make')
 
@@ -430,7 +448,8 @@
 	command! BuildToolsBuild call <SID>BuildToolsBuild()
 
 	nnoremap <F5> :BuildToolsBuild<cr>
-" Text navigation
+	"}}}
+" Text navigation {{{
 	" Remove normal mode arrow keys.
 	nmap <Up> <Nop>
 	nmap <Down> <Nop>
@@ -446,7 +465,8 @@
 	" inoremap <C-l> <Right>
 	" inoremap <C-j> <Down>
 	" inoremap <C-k> <Up>
-" Text manipulation
+	" }}}
+" Text manipulation {{{
 	set backspace=indent,eol,start
 
 	" Consistent yank.
@@ -454,7 +474,8 @@
 
 	" One hit macro play.
 	nnoremap Q @q
-" Tags
+	"}}}
+" Tags {{{
 	let g:gutentags_project_root = 'c:/!bi/'
 	let g:gutentags_resolve_symlinks = 1
 
@@ -476,7 +497,8 @@
 	" 				\silent exec ctags_cmd . " -a " . expand("%") | 
 	" 				\echo "Tags updated: " . expand("%")
 	" aug END
-" Buffers
+	" }}}
+" Buffers {{{
 	set autowriteall autoread
 
 	aug file_hooks
@@ -487,3 +509,6 @@
 		au FileType c,cpp,cs,java set commentstring=//\ %s
 		au CursorHold * checktime
 	aug END
+	"}}}
+
+" vim:set foldmethod=marker foldtext=FoldTextWithFirstLine():
