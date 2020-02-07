@@ -1,3 +1,4 @@
+
 " VIMRC {{{
 	set exrc
 	" set secure
@@ -500,6 +501,7 @@
 	" }}}
 " Buffers {{{
 	set autowriteall autoread
+	set nofixendofline
 
 	aug file_hooks
 		au!
