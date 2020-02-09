@@ -112,7 +112,7 @@
 		Plug 'ncm2/ncm2-vim-lsp'
 	call plug#end()
 	"}}}
-"  Formatting {{{
+" Formatting {{{
 	" let g:clang_format_style = '"' . s:path . '\tools\clang\.clang-format"'
 	let g:clang_format_style = 'file'
 
@@ -332,7 +332,7 @@
 	command! Term call s:run_terminal()
 	"}}}
 " Folds {{{
-	set foldmethod=indent nofen foldopen-=block,hor foldnestmax=1
+	set foldopen-=block,hor foldnestmax=1
 
 	" custom fold text function.
 	func! FoldText()
@@ -341,25 +341,22 @@
 	set foldtext=FoldText()
 
 	func! FoldTextWithFirstLine()
-		return substitute(getline(v:foldstart), '{', '', 'g') . ' [' . string(v:foldend - v:foldstart) . '] --'
+		return substitute(getline(v:foldstart), '{', '', 'g') . ' [' . string(v:foldend - v:foldstart) . ']'
 	endfunc
 
 	" Fold jumping with alt key.
 	nnoremap <M-j> zj
 	nnoremap <M-k> zk
 
-	" Use fold level provided by count and remember it for repetition.
-	let s:last_fold_level = 1
-	func! FoldToLevel()
-		set foldenable
-		if v:count != 0
-			let s:last_fold_level = v:count
-		endif
-
-		let &foldlevel = s:last_fold_level
+	" Use fold level provided by count.
+	let g:prefered_fold_method = 'indent'
+	func! SetFolding()
+		set foldmethod=indent foldenable
+		let &foldmethod = g:prefered_fold_method
+		let &foldlevel = v:count
 	endfunc
 
-	nnoremap <Leader>f :call FoldToLevel()<cr>
+	nnoremap <Leader>f :call SetFolding()<cr>
 	"}}}
 " Snippets {{{
 	nmap <Leader>-- o<esc>0D2a/<esc>77a-<esc>
