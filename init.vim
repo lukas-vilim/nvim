@@ -94,7 +94,7 @@
 		" Plug 'jiangmiao/auto-pairs'
 
 		" This could be a nice replacement for the :Explore
-		" Plug 'vifm/vifm.vim'
+		Plug 'vifm/vifm.vim'
 
 		" Multiple highlights of chosen keywords.
 		" Plug 't9md/vim-quickhl'
@@ -150,15 +150,18 @@
 	" enable for include debug when something gets odd...
 	let g:lsp_diagnostics_enabled = 0
 	let g:lsp_highlight_references_enabled = 1
+	let g:lsp_enable_clangd = 0
 
 	if executable('pyls')
 		" pip install python-language-server
-		" au User lsp_setup call lsp#register_server({
-		" 			\ 'name': 'pyls',
-		" 			\ 'cmd': {server_info->['pyls']},
-		" 			\ 'whitelist': ['python'],
-		" 			\ })
+		au User lsp_setup call lsp#register_server({
+					\ 'name': 'pyls',
+					\ 'cmd': {server_info->['pyls']},
+					\ 'whitelist': ['python'],
+					\ })
+	endif
 
+	if g:lsp_enable_clangd == 1 && executable('clangd')
 		au User lsp_setup call lsp#register_server({
 					\ 'name': 'clangd',
 					\ 'cmd': {server_info->['clangd', '--background-index']},
@@ -170,7 +173,7 @@
 		setlocal omnifunc=lsp#complete
 		setlocal signcolumn=yes
 
-		nnoremap <buffer> gd <plug>(lsp-definition)
+		" nnoremap <buffer> gd <plug>(lsp-definition)
 		nnoremap <buffer> <f2> <plug>(lsp-rename)
 		nnoremap <buffer> <Leader>s <plug>(lsp-workspace-symbol)
 		nnoremap <buffer> <Leader>m :LspDocumentSymbol<cr>:sleep 100ms<cr>:ccl<cr>:Quickfix<cr>
@@ -330,9 +333,20 @@
 	endfunc
 
 	command! Term call s:run_terminal()
+
+	func! s:run_vifm()
+		tabnew
+		set guitablabel='VIFM'
+
+		Vifm
+		tnoremap <buffer> <Esc> <C-\><C-n>
+	endfunc
+
+	command! FB call s:run_vifm()
+
 	"}}}
 " Folds {{{
-	set foldopen-=block,hor foldnestmax=1
+	set foldopen-=block,hor foldnestmax=5
 
 	" custom fold text function.
 	func! FoldText()
@@ -405,6 +419,7 @@
 	nnoremap <Leader>p :Files .<cr> 
 	nnoremap <Leader>b :Buffers .<cr> 
 	nnoremap <Leader>t :BTags<cr>
+	nnoremap <Leader>T :Tags<cr>
 	nnoremap <Leader>l :BLines<cr>
 	nnoremap <Leader>o :call FindHeaderOrSource()<CR>
 	"}}}
@@ -446,6 +461,10 @@
 	command! BuildToolsBuild call <SID>BuildToolsBuild()
 
 	nnoremap <F5> :BuildToolsBuild<cr>
+
+	nnoremap ]q :cn<cr>
+	nnoremap [q :cp<cr>
+
 	"}}}
 " Text navigation {{{
 	" Remove normal mode arrow keys.
