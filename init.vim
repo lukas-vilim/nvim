@@ -3,8 +3,6 @@
 	set exrc
 	" set secure
 
-	set modeline modelines=5 mle
-
 	let mapleader="\ "
 	nnoremap <Leader>v :e $MYVIMRC<cr>
 
@@ -35,6 +33,13 @@
 	" Setup path to external tools
 	let $PATH .= ";" . s:path . "/tools/ctags/"
 	let $PATH .= ";" . s:path . "/tools/fd/"
+
+	set modeline modelines=5
+	if g:os == 'Windows'
+		" Not implemented on linux.
+		set mle
+	endif
+
 	" }}}
 " Utils {{{
 	function! s:get_visual_selection()
@@ -424,7 +429,7 @@
 	nnoremap <Leader>o :call FindHeaderOrSource()<CR>
 	"}}}
 " Utils {{{
-	function ClearQuickfixList()
+	function! ClearQuickfixList()
 		call setqflist([])
 	endfunction
 	command! ClearQuickfixList call ClearQuickfixList()
