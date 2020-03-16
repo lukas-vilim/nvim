@@ -435,19 +435,20 @@
 	command! ClearQuickfixList call ClearQuickfixList()
 	"}}}
 " Build tools {{{
-	let s:build_tools = [':make']
-	let s:build_tool_active = get(s:build_tools, 0, ':make')
+	let s:build_tools = { 'make': ':make' }
+	let s:build_tool_active = get(s:build_tools, 'make', ':make')
 
 	func! BuildToolsClear()
-		let s:build_tools = []
+		let s:build_tools = {}
 	endfunc
 
-	func! BuildToolsAdd(tool)
-		call add(s:build_tools, a:tool)
+	func! BuildToolsAdd(name, tool)
+		let s:build_tools[a:name] = a:tool
 	endfunc
 
 	func! s:BuildToolsSelect(tool, bang)
-		let s:build_tool_active = a:tool
+		let unescaped = substitute(a:tool, '\\ ', ' ', 'g')
+		let s:build_tool_active = s:build_tools[unescaped]
 		let s:build_tool_active = substitute(s:build_tool_active, '\\ ', ' ', 'g')
 		let s:build_tool_active = substitute(s:build_tool_active, "\'", '', 'g')
 		let s:build_tool_active = substitute(s:build_tool_active, "\\\"", '\"', 'g')
@@ -462,7 +463,7 @@
 	endfunc
 
 	command! -nargs=1 -bang BuildToolsSelect call <SID>BuildToolsSelect(string(<q-args>), <bang>0)
-	command! -bang Build call fzf#run(fzf#wrap({'source' : s:build_tools, 'sink' : 'BuildToolsSelect<bang>'}))
+	command! -bang Build call fzf#run(fzf#wrap({'source' : keys(s:build_tools), 'sink' : 'BuildToolsSelect<bang>'}))
 	command! BuildToolsBuild call <SID>BuildToolsBuild()
 
 	nnoremap <F5> :BuildToolsBuild<cr>
