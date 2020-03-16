@@ -220,7 +220,7 @@
 	set signcolumn=yes
 
 	set matchpairs+=<:>
-	set shiftwidth=2 ts=2 noexpandtab nosmarttab
+	set shiftwidth=2 ts=2 noexpandtab nosmarttab softtabstop=2
 	set scrolloff=5
 	set list listchars=space:·,tab:→\ 
 
