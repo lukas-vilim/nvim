@@ -56,23 +56,6 @@
 		return join(lines, "\n")
 	endfunction
 	" }}}
-" Project {{{
-	func! s:source_project()
-		if filereadable("init.vim") && expand("%:p:h") !=? getcwd()
-			echo "Project loaded"
-			so init.vim
-		endif
-	endfunc
-
-	command! SourceProject call s:source_project()
-	
-	aug project
-		au!
-		au DirChanged * SourceProject
-	aug END
-
-	SourceProject
-	"}}}
 " Plugins {{{
 	" Prevents the annoyance of inconsisten indent setting differing on file type.
 	filetype plugin indent off
@@ -421,12 +404,17 @@
 		exec ':FZF --query=' . fileName . '.' . ext
 	endfunction
 
+	" Override the Window command completion.
+	command! W :w
+
+
 	nnoremap <Leader>p :Files .<cr> 
 	nnoremap <Leader>b :Buffers .<cr> 
 	nnoremap <Leader>t :BTags<cr>
 	nnoremap <Leader>T :Tags<cr>
 	nnoremap <Leader>l :BLines<cr>
 	nnoremap <Leader>o :call FindHeaderOrSource()<CR>
+
 	"}}}
 " Utils {{{
 	function! ClearQuickfixList()
@@ -435,23 +423,31 @@
 	command! ClearQuickfixList call ClearQuickfixList()
 	"}}}
 " Build tools {{{
-	let s:build_tools = { 'make': ':make' }
-	let s:build_tool_active = get(s:build_tools, 'make', ':make')
+	let s:build_tools = {}
+	let s:build_tool_active = {}
 
 	func! BuildToolsClear()
 		let s:build_tools = {}
 	endfunc
 
+	" name, makeprg, errformat
 	func! BuildToolsAdd(name, tool)
+		if !has_key(a:tool, 'makeprg') || !has_key(a:tool, 'errorformat')
+			echoerr 'Tool: Bad format!'
+			return
+		endif
+
 		let s:build_tools[a:name] = a:tool
 	endfunc
 
 	func! s:BuildToolsSelect(tool, bang)
-		let unescaped = substitute(a:tool, '\\ ', ' ', 'g')
-		let s:build_tool_active = s:build_tools[unescaped]
-		let s:build_tool_active = substitute(s:build_tool_active, '\\ ', ' ', 'g')
-		let s:build_tool_active = substitute(s:build_tool_active, "\'", '', 'g')
-		let s:build_tool_active = substitute(s:build_tool_active, "\\\"", '\"', 'g')
+		let option = substitute(a:tool, '\\ ', ' ', 'g')
+		let option = substitute(option, "'", '', 'g')
+
+		let s:build_tool_active = s:build_tools[option]
+
+		let &makeprg = s:build_tool_active['makeprg']
+		let &efm = s:build_tool_active['errorformat']
 
 		if a:bang != 0
 			call s:BuildToolsBuild()
@@ -459,14 +455,18 @@
 	endfunc
 
 	func! s:BuildToolsBuild()
-		exec s:build_tool_active
+		let &makeprg = s:build_tool_active['makeprg']
+		let &efm = s:build_tool_active['errorformat']
+
+		:Make!
 	endfunc
 
-	command! -nargs=1 -bang BuildToolsSelect call <SID>BuildToolsSelect(string(<q-args>), <bang>0)
-	command! -bang Build call fzf#run(fzf#wrap({'source' : keys(s:build_tools), 'sink' : 'BuildToolsSelect<bang>'}))
-	command! BuildToolsBuild call <SID>BuildToolsBuild()
+	" command! -nargs=1 -bang BuildToolsSelect call <SID>BuildToolsSelect(string(<q-args>), <bang>0)
+	command! -bang BuildSelect call fzf#run(fzf#wrap({'source' : keys(s:build_tools), 'sink' : 'BuildToolsSelect<bang>'}))
+	command! Build call <SID>BuildToolsBuild()
 
-	nnoremap <F5> :BuildToolsBuild<cr>
+	nnoremap <Leader>b :Build<cr>
+	nnoremap <Leader>B :BuildSelect<cr>
 
 	nnoremap ]q :cn<cr>
 	nnoremap [q :cp<cr>
@@ -505,7 +505,7 @@
 	" Common ctags command.
 	let ctags_cmd = 
 				\"!ctags.exe -R --c++-kinds=+p --fields=+iaS --extras=+q ".
-				\"--exclude=.git --exclude=.svn --exclude=extern --verbose=yes"
+				\"--exclude=.git --exclude=.svn --exclude=extern --verbose=no"
 
 	" Rebuild tags for the whole project.
 	nmap <Leader>rt :exec ctags_cmd . " ./Enfusion" \| :exec ctags_cmd . " -a ./A4Gamecode"
@@ -533,6 +533,23 @@
 		au FileType c,cpp,cs,java set commentstring=//\ %s
 		au CursorHold * checktime
 	aug END
+	"}}}
+" Project {{{
+	func! s:source_project()
+		if filereadable("init.vim") && expand("%:p:h") !=? getcwd()
+			echo "Project loaded"
+			so init.vim
+		endif
+	endfunc
+
+	command! SourceProject call s:source_project()
+	
+	aug project
+		au!
+		au DirChanged * SourceProject
+	aug END
+
+	SourceProject
 	"}}}
 
 " vim:set foldmethod=marker foldtext=FoldTextWithFirstLine():
