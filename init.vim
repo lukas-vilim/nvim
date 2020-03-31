@@ -138,7 +138,7 @@
 	" enable for include debug when something gets odd...
 	let g:lsp_diagnostics_enabled = 0
 	let g:lsp_highlight_references_enabled = 1
-	let g:lsp_enable_clangd = 0
+	let g:lsp_enable_clangd = 1
 
 	if executable('pyls')
 		" pip install python-language-server
@@ -161,10 +161,10 @@
 		setlocal omnifunc=lsp#complete
 		setlocal signcolumn=yes
 
-		" nnoremap <buffer> gd <plug>(lsp-definition)
+		nnoremap <buffer> gd <plug>(lsp-definition)
 		nnoremap <buffer> <f2> <plug>(lsp-rename)
 		nnoremap <buffer> <Leader>s <plug>(lsp-workspace-symbol)
-		nnoremap <buffer> <Leader>m :LspDocumentSymbol<cr>:sleep 100ms<cr>:ccl<cr>:Quickfix<cr>
+		" nnoremap <buffer> <Leader>m :LspDocumentSymbol<cr>:sleep 100ms<cr>:ccl<cr>:Quickfix<cr>
 		nnoremap <buffer> <Leader>d <plug>(lsp-definition)
 		nnoremap <buffer> <Leader>r <plug>(lsp-references)
 	endfunction
@@ -379,7 +379,6 @@
 					\   ' --smart-case --follow --glob "!.git" --glob "!.svn" ' .
 					\   '--glob "!.hg" '.shellescape(<q-args>), 1,<bang>0)
 
-
 		nnoremap <Leader>R :Rg <c-r>=expand("<cword>")<cr>
 	endif
 
@@ -404,14 +403,16 @@
 		exec ':FZF --query=' . fileName . '.' . ext
 	endfunction
 
+	" Use the tags_keys file as an input for tselect.
+	command! -bang TagSearch call fzf#run(fzf#wrap({'source' : readfile('tags_keys'), 'sink' : 'tselect'}))
+
 	" Override the Window command completion.
 	command! W :w
-
 
 	nnoremap <Leader>p :Files .<cr> 
 	nnoremap <Leader>b :Buffers .<cr> 
 	nnoremap <Leader>t :BTags<cr>
-	nnoremap <Leader>T :Tags<cr>
+	nnoremap <Leader>T :TagSearch<cr>
 	nnoremap <Leader>l :BLines<cr>
 	nnoremap <Leader>o :call FindHeaderOrSource()<CR>
 
@@ -461,12 +462,12 @@
 		:Make!
 	endfunc
 
-	" command! -nargs=1 -bang BuildToolsSelect call <SID>BuildToolsSelect(string(<q-args>), <bang>0)
+	command! -nargs=1 -bang BuildToolsSelect call <SID>BuildToolsSelect(string(<q-args>), <bang>0)
 	command! -bang BuildSelect call fzf#run(fzf#wrap({'source' : keys(s:build_tools), 'sink' : 'BuildToolsSelect<bang>'}))
 	command! Build call <SID>BuildToolsBuild()
 
-	nnoremap <Leader>b :Build<cr>
-	nnoremap <Leader>B :BuildSelect<cr>
+	nnoremap <Leader>m :Build<cr>
+	nnoremap <Leader>M :BuildSelect<cr>
 
 	nnoremap ]q :cn<cr>
 	nnoremap [q :cp<cr>
@@ -502,13 +503,25 @@
 	let g:gutentags_project_root = 'c:/!bi/'
 	let g:gutentags_resolve_symlinks = 1
 
+	func! MakeTagKeys()
+		let lines = readfile('tags')
+		call map(lines, {key, val -> strpart(val, 0, stridx(val, '	'))})
+		call uniq(lines)
+		call writefile(lines, 'tags_keys')
+	endfunc
+
 	" Common ctags command.
 	let ctags_cmd = 
 				\"!ctags.exe -R --c++-kinds=+p --fields=+iaS --extras=+q ".
 				\"--exclude=.git --exclude=.svn --exclude=extern --verbose=no"
 
+	func! RebuildTags()
+		exec ctags_cmd . " ./Enfusion" \| :exec ctags_cmd . " -a ./A4Gamecode"
+		call MakeTagKeys()
+	endfunc
+
 	" Rebuild tags for the whole project.
-	nmap <Leader>rt :exec ctags_cmd . " ./Enfusion" \| :exec ctags_cmd . " -a ./A4Gamecode"
+	nmap <Leader>rt :call RebuildTags()<cr>
 
 	" Auto update ctags on file save.
 	" aug ctags_save_hook
