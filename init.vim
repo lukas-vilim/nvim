@@ -403,8 +403,23 @@
 		exec ':FZF --query=' . fileName . '.' . ext
 	endfunction
 
+	let s:taglist = []
+	func! s:TagSelected(line)
+		echom s:taglist[str2nr(a:line)]['cmd']
+	endfunc
+
+	func! s:TagSelect(tag)
+		let s:taglist = taglist(a:tag)
+		let entries = s:taglist[:]
+
+		call map(entries, {key, val -> key .  "	" . val['kind'] . "	 " . val['filename']})
+		call fzf#run(fzf#wrap({'source' : entries, 'sink' : function('<SID>TagSelected'), 'options' : '--header=' . a:tag}))
+	endfunc
+
+	command! -nargs=1 TagSelect call <SID>TagSelect(<q-args>)
 	" Use the tags_keys file as an input for tselect.
-	command! -bang TagSearch call fzf#run(fzf#wrap({'source' : readfile('tags_keys'), 'sink' : 'tselect'}))
+	" command! TagSearch call fzf#run(fzf#wrap({'source' : readfile('tags_keys'), 'sink' : function('<SID>TagSelect')}))
+	command! TagSearch call fzf#run(fzf#wrap({'source' : readfile('tags_keys'), 'sink' : 'tselect'}))
 
 	" Override the Window command completion.
 	command! W :w
@@ -425,14 +440,14 @@
 	"}}}
 " Build tools {{{
 	let s:build_tools = {}
-	let s:build_tool_active = {}
+	let s:build_tool_active = ''
 
 	func! BuildToolsClear()
 		let s:build_tools = {}
 	endfunc
 
 	" name, makeprg, errformat
-	func! BuildToolsAdd(name, tool)
+	func! s:BuildToolsAdd(name, tool)
 		if !has_key(a:tool, 'makeprg') || !has_key(a:tool, 'errorformat')
 			echoerr 'Tool: Bad format!'
 			return
@@ -445,10 +460,7 @@
 		let option = substitute(a:tool, '\\ ', ' ', 'g')
 		let option = substitute(option, "'", '', 'g')
 
-		let s:build_tool_active = s:build_tools[option]
-
-		let &makeprg = s:build_tool_active['makeprg']
-		let &efm = s:build_tool_active['errorformat']
+		let s:build_tool_active = option
 
 		if a:bang != 0
 			call s:BuildToolsBuild()
@@ -456,14 +468,16 @@
 	endfunc
 
 	func! s:BuildToolsBuild()
-		let &makeprg = s:build_tool_active['makeprg']
-		let &efm = s:build_tool_active['errorformat']
+		let tools = s:build_tools[s:build_tool_active]
+		let &makeprg = tools['makeprg']
+		let &efm = tools['errorformat']
 
-		:Make!
+		:Make
 	endfunc
 
+	command! -nargs=* BuildToolsAdd call <SID>BuildToolsAdd(<args>)
 	command! -nargs=1 -bang BuildToolsSelect call <SID>BuildToolsSelect(string(<q-args>), <bang>0)
-	command! -bang BuildSelect call fzf#run(fzf#wrap({'source' : keys(s:build_tools), 'sink' : 'BuildToolsSelect<bang>'}))
+	command! -bang BuildSelect call fzf#run(fzf#wrap({'source' : keys(s:build_tools), 'sink' : 'BuildToolsSelect<bang>', 'options' : '--header="Selected: ' . s:build_tool_active . '"'}))
 	command! Build call <SID>BuildToolsBuild()
 
 	nnoremap <Leader>m :Build<cr>
@@ -541,10 +555,10 @@
 	aug file_hooks
 		au!
 
-		au FocusGained,BufEnter * :silent! checktime
-		au FocusLost,WinLeave * :silent! w
+		" au FocusGained,BufEnter * :silent! checktime
+		" au FocusLost,WinLeave * :silent! w
 		au FileType c,cpp,cs,java set commentstring=//\ %s
-		au CursorHold * checktime
+		" au CursorHold * checktime
 	aug END
 	"}}}
 " Project {{{
@@ -557,12 +571,12 @@
 
 	command! SourceProject call s:source_project()
 	
-	aug project
-		au!
-		au DirChanged * SourceProject
-	aug END
+	" aug project
+	" 	au!
+	" 	au DirChanged * SourceProject
+	" aug END
 
-	SourceProject
+	call s:source_project()
 	"}}}
 
 " vim:set foldmethod=marker foldtext=FoldTextWithFirstLine():
