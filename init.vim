@@ -507,6 +507,9 @@
 " Text manipulation {{{
 	set backspace=indent,eol,start
 
+	" the clipboard register is now the "
+	set clipboard^=unnamed
+
 	" Consistent yank.
 	nnoremap Y y$
 
