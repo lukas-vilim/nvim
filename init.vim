@@ -581,5 +581,9 @@
 
 	call s:source_project()
 	"}}}
+" Git {{{
+	nnoremap <Leader>gs :Gstatus<cr>
+	nnoremap <Leader>gc :Gcommit<cr>
+	" }}}
 
 " vim:set foldmethod=marker foldtext=FoldTextWithFirstLine():
