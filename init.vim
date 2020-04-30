@@ -377,7 +377,7 @@
 					\ call fzf#vim#grep(
 					\   'rg --column --line-number --no-heading --color=always' . 
 					\   ' --smart-case --follow --glob "!.git" --glob "!.svn" ' .
-					\   '--glob "!.hg" '.shellescape(<q-args>), 1,<bang>0)
+					\   '--glob "!.hg" --glob "*.h" --glob "*.cpp" --glob "*.c" '.shellescape(<q-args>), 1,<bang>0)
 
 		nnoremap <Leader>R :Rg <c-r>=expand("<cword>")<cr>
 	endif
@@ -416,10 +416,15 @@
 		call fzf#run(fzf#wrap({'source' : entries, 'sink' : function('<SID>TagSelected'), 'options' : '--header=' . a:tag}))
 	endfunc
 
+	let s:tag_cache = []
+	func! s:TagSearch()
+		call fzf#run(fzf#wrap({'source' : 'cat tags_keys', 'sink' : 'tselect'}))
+	endfunc
+
 	command! -nargs=1 TagSelect call <SID>TagSelect(<q-args>)
 	" Use the tags_keys file as an input for tselect.
 	" command! TagSearch call fzf#run(fzf#wrap({'source' : readfile('tags_keys'), 'sink' : function('<SID>TagSelect')}))
-	command! TagSearch call fzf#run(fzf#wrap({'source' : readfile('tags_keys'), 'sink' : 'tselect'}))
+	command! TagSearch call s:TagSearch()
 
 	" Override the Window command completion.
 	command! W :w
@@ -481,7 +486,7 @@
 	command! Build call <SID>BuildToolsBuild()
 
 	nnoremap <Leader>m :Build<cr>
-	nnoremap <Leader>M :BuildSelect<cr>
+	nnoremap <Leader>M :BuildSelect!<cr>
 
 	nnoremap ]q :cn<cr>
 	nnoremap [q :cp<cr>
@@ -507,14 +512,19 @@
 " Text manipulation {{{
 	set backspace=indent,eol,start
 
-	" the clipboard register is now the "
-	set clipboard^=unnamed
+	" the clipboard now action is now bound to unnamed " and + registers.
+	" Immediate pasting!
+	set clipboard^=unnamedplus
 
 	" Consistent yank.
 	nnoremap Y y$
 
 	" One hit macro play.
 	nnoremap Q @q
+
+	" One hit apply Q on all lines.
+	vnoremap Q :normal Q<cr>
+
 	"}}}
 " Tags {{{
 	let g:gutentags_project_root = 'c:/!bi/'
@@ -528,13 +538,15 @@
 	endfunc
 
 	" Common ctags command.
-	let ctags_cmd = 
+	let s:ctags_cmd = 
 				\"!ctags.exe -R --c++-kinds=+p --fields=+iaS --extras=+q ".
 				\"--exclude=.git --exclude=.svn --exclude=extern --verbose=no"
 
 	func! RebuildTags()
-		exec ctags_cmd . " ./Enfusion" \| :exec ctags_cmd . " -a ./A4Gamecode"
+		echo s:ctags_cmd
+		exec s:ctags_cmd . " ./Enfusion" | exec s:ctags_cmd . " -a ./A4Gamecode"
 		call MakeTagKeys()
+		echom 'Tags rebuilt!'
 	endfunc
 
 	" Rebuild tags for the whole project.
@@ -561,7 +573,7 @@
 		" au FocusGained,BufEnter * :silent! checktime
 		" au FocusLost,WinLeave * :silent! w
 		au FileType c,cpp,cs,java set commentstring=//\ %s
-		" au CursorHold * checktime
+		au CursorHold * checktime
 	aug END
 	"}}}
 " Project {{{
