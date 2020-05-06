@@ -482,7 +482,7 @@
 
 	command! -nargs=* BuildToolsAdd call <SID>BuildToolsAdd(<args>)
 	command! -nargs=1 -bang BuildToolsSelect call <SID>BuildToolsSelect(string(<q-args>), <bang>0)
-	command! -bang BuildSelect call fzf#run(fzf#wrap({'source' : keys(s:build_tools), 'sink' : 'BuildToolsSelect<bang>', 'options' : '--header="Selected: ' . s:build_tool_active . '"'}))
+	command! -bang BuildSelect call fzf#run(fzf#wrap({'source' : sort(keys(s:build_tools)), 'sink' : 'BuildToolsSelect<bang>', 'options' : '--header="Selected: ' . s:build_tool_active . '"'}))
 	command! Build call <SID>BuildToolsBuild()
 
 	nnoremap <Leader>m :Build<cr>
