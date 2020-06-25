@@ -373,11 +373,21 @@
 					\'rg --files --hidden --follow '.
 					\'--glob "!.git" --glob "!.svn" --glob "!.hg"'
 
-		command! -bang -nargs=* Rg
-					\ call fzf#vim#grep(
-					\   'rg --column --line-number --no-heading --color=always' . 
-					\   ' --smart-case --follow --glob "!.git" --glob "!.svn" ' .
-					\   '--glob "!.hg" --glob "*.h" --glob "*.cpp" --glob "*.c" '.shellescape(<q-args>), 1,<bang>0)
+		let g:rg_globs = ['!.hg', '!.svn', '*.h', '*.cpp', '*.c']
+		function! CallRg(args, bang)
+			let globs = ''
+			if !empty(g:rg_globs)
+				let tmp = g:rg_globs[:]
+				call map(tmp, {idx, val -> '--glob "' . val . '"'})
+				let globs = join(tmp, ' ') 
+			endif
+
+			call fzf#vim#grep(
+			\   'rg ' . globs . ' --column --line-number --no-heading --color=always' . 
+			\   ' --smart-case --follow '.shellescape(a:args), 1, a:bang)
+		endfunction
+
+		command! -bang -nargs=* Rg call CallRg(<q-args>, <bang>0)
 
 		nnoremap <Leader>R :Rg <c-r>=expand("<cword>")<cr>
 	endif
