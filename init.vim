@@ -3,6 +3,9 @@
 	set exrc
 	" set secure
 
+	" Setup a ENV variable to config directory.
+	let $CONF=expand('%:h')
+
 	let mapleader="\ "
 	nnoremap <Leader>v :e $MYVIMRC<cr>
 
@@ -85,15 +88,9 @@
 
 		" Highlights yanked selection.
 		Plug 'machakann/vim-highlightedyank'
-		" Automatic quote/braces completion plugin.
-		" Plug 'jiangmiao/auto-pairs'
 
 		" This could be a nice replacement for the :Explore
 		Plug 'vifm/vifm.vim'
-
-		" Multiple highlights of chosen keywords.
-		" Plug 't9md/vim-quickhl'
-		" nnoremap <Leader>H <Plug>(quickhl-manual-this-whole-word)
 
 		" ncm2 and dependencies
 		Plug 'roxma/nvim-yarp'
@@ -105,28 +102,8 @@
 		Plug 'prabirshrestha/async.vim'
 		Plug 'prabirshrestha/vim-lsp'
 		Plug 'ncm2/ncm2-vim-lsp'
+		Plug 'ncm2/ncm2-racer'
 	call plug#end()
-	"}}}
-" Formatting {{{
-	" let g:clang_format_style = '"' . s:path . '\tools\clang\.clang-format"'
-	let g:clang_format_style = 'file'
-
-	func! ClangFmt()
-		let current_line = line('.')
-		let l:lines = string(current_line).':'.string(current_line + v:count)
-		let clang_tools_path = s:path . '\tools\clang\'
-
-		" let style_arg = '-style=\"' . clang_tools_path . '.clang-format\"'
-		" echo style_arg
-		" python import sys
-		" exec 'python sys.argv = ["' . style_arg . '"]'
-		exec 'pyf ' . clang_tools_path . 'clang-format.py'
-	endfunc
-
-	aug clang_fmg
-		au!
-		au FileType h,cpp,c,hpp nnoremap <Leader>i :call ClangFmt()<cr>
-	aug END
 	"}}}
 " Completion + ncm2 {{{
 	" IMPORTANT: :help Ncm2PopupOpen for more information
@@ -213,6 +190,11 @@
 	set shiftwidth=2 ts=2 noexpandtab nosmarttab softtabstop=2
 	set scrolloff=5
 	set list listchars=space:·,tab:→\ 
+
+	nnoremap <C-h> <C-w>h
+	nnoremap <C-l> <C-w>l
+	nnoremap <C-j> <C-w>j
+	nnoremap <C-k> <C-w>k
 
 	" Switch to previous buffer.
 	" nnoremap <tab> :b#<cr>
@@ -325,6 +307,11 @@
 		tnoremap <buffer> <C-w>k <C-\><C-n><C-w>k
 		tnoremap <buffer> <C-u> <C-\><C-n><C-u>
 		tnoremap <buffer> <C-d> <C-\><C-n><C-d>
+
+		tnoremap <buffer> <C-h> <C-\><C-n><C-w>h
+		tnoremap <buffer> <C-l> <C-\><C-n><C-w>l
+		tnoremap <buffer> <C-j> <C-\><C-n><C-w>j
+		tnoremap <buffer> <C-k> <C-\><C-n><C-w>k
 	endfunc
 
 	command! Term call s:run_terminal()
