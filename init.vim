@@ -40,6 +40,8 @@
 		set mle
 	endif
 
+	set undofile
+
 	" }}}
 " Utils {{{
 	function! s:get_visual_selection()
@@ -55,6 +57,11 @@
 
 		return join(lines, "\n")
 	endfunction
+
+	function! ClearQuickfixList()
+		call setqflist([])
+	endfunction
+	command! ClearQuickfixList call ClearQuickfixList()
 	" }}}
 " Plugins {{{
 	" Prevents the annoyance of inconsisten indent setting differing on file type.
@@ -367,6 +374,9 @@
 " Searching {{{
 	set ignorecase smartcase noshowmatch hls
 
+	" Turn off autohighlight by hitting enter.
+	nnoremap <CR> :nohl<CR><CR>
+
 	"Use ripgrep when installed.
 	if executable('rg')
 		let $FZF_DEFAULT_COMMAND = 
@@ -440,18 +450,14 @@
 	command! W :w
 
 	nnoremap <Leader>p :Files .<cr> 
+	nnoremap <Leader>P :FZF --query=<c-r>=expand("<cword>")<cr><cr>
 	nnoremap <Leader>b :Buffers .<cr> 
 	nnoremap <Leader>t :BTags<cr>
 	nnoremap <Leader>T :TagSearch<cr>
 	nnoremap <Leader>l :BLines<cr>
 	nnoremap <Leader>o :call FindHeaderOrSource()<CR>
 
-	"}}}
-" Utils {{{
-	function! ClearQuickfixList()
-		call setqflist([])
-	endfunction
-	command! ClearQuickfixList call ClearQuickfixList()
+
 	"}}}
 " Build tools {{{
 	let s:build_tools = {}
