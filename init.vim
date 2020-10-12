@@ -396,7 +396,7 @@
 
 		command! -bang -nargs=* Rg call CallRg(<q-args>, <bang>0)
 
-		nnoremap <Leader>R :Rg <c-r>=expand("<cword>")<cr>
+		nnoremap <Leader>L :Rg <c-r>=expand("<cword>")<cr>
 	endif
 
 	" Use silver searcher when installed.
