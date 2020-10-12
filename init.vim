@@ -579,6 +579,7 @@
 " Buffers {{{
 	set autowriteall autoread
 	set nofixendofline
+	set noswapfile
 
 	aug file_hooks
 		au!
