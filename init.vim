@@ -364,12 +364,23 @@
 	" Turn off autohighlight by hitting enter.
 	nnoremap <CR> :nohl<CR><CR>
 
+	let g:fzf_follow = 0
+	let g:fzf_hidden = 1
+	let cmd = 'rg --files'
+
+	if g:fzf_follow
+		let cmd .= ' --follow'
+	endif
+
+	if g:fzf_hidden 
+		let cmd .= ' --hidden'
+	endif
+	
+	let cmd .= ' --glob "!.git" --glob "!.svn" --glob "!.hg"'
+	let $FZF_DEFAULT_COMMAND = cmd
+
 	"Use ripgrep when installed.
 	if executable('rg')
-		let $FZF_DEFAULT_COMMAND = 
-					\'rg --files --hidden --follow '.
-					\'--glob "!.git" --glob "!.svn" --glob "!.hg"'
-
 		let g:rg_globs = ['!.hg', '!.svn', '*.h', '*.cpp', '*.c']
 		function! CallRg(args, bang)
 			let globs = ''
