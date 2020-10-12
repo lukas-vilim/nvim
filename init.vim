@@ -3,9 +3,6 @@
 	set exrc
 	" set secure
 
-	" Setup a ENV variable to config directory.
-	let $CONF=expand('%:h')
-
 	let mapleader="\ "
 	nnoremap <Leader>v :e $MYVIMRC<cr>
 
@@ -30,12 +27,13 @@
 		nmap <C-z> <Nop>
 	endif
 
-	" Local path
-	let s:path = fnamemodify(resolve(expand('<sfile>:p')), ':h')
+	" configuration path
+	let g:config_path = fnamemodify(resolve(expand('<sfile>:p')), ':h')
+	let g:tools_path = g:config_path . "/tools/"
 
 	" Setup path to external tools
-	let $PATH .= ";" . s:path . "/tools/ctags/"
-	let $PATH .= ";" . s:path . "/tools/fd/"
+	let $PATH .= ";" . g:config_path . "/tools/ctags/"
+	let $PATH .= ";" . g:config_path . "/tools/fd/"
 
 	set modeline modelines=5
 	if g:os == 'Windows'
@@ -68,9 +66,10 @@
 	" }}}
 " Plugins {{{
 	" Prevents the annoyance of inconsisten indent setting differing on file type.
+	filetype plugin on
 	filetype plugin indent off
 
-	call plug#begin(s:path . '/plugged')
+	call plug#begin(g:config_path . '/plugged')
 		Plug 'vim-airline/vim-airline'
 		Plug 'vim-airline/vim-airline-themes'
 
@@ -592,20 +591,15 @@
 	"}}}
 " Project {{{
 	func! s:source_project()
-		if filereadable("init.vim") && expand("%:p:h") !=? getcwd()
+		let path = getcwd() . "/exrc.vim"
+		if filereadable(path)
 			echo "Project loaded"
-			so init.vim
+			execute 'so ' . path
 		endif
 	endfunc
 
 	command! SourceProject call s:source_project()
-	
-	" aug project
-	" 	au!
-	" 	au DirChanged * SourceProject
-	" aug END
-
-	call s:source_project()
+	SourceProject
 	"}}}
 " Git {{{
 	nnoremap <Leader>gs :Gstatus<cr>
