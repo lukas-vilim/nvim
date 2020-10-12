@@ -434,14 +434,14 @@
 	endfunc
 
 	let s:tag_cache = []
-	func! s:TagSearch()
-		call fzf#run(fzf#wrap({'source' : 'cat tags_keys', 'sink' : 'tselect'}))
+	func! s:TagSearch(arg)
+		call fzf#run(fzf#wrap({'source' : 'cat tags_keys', 'sink' : 'tselect', 'options' : '--query=' . shellescape(a:arg)}))
 	endfunc
 
 	command! -nargs=1 TagSelect call <SID>TagSelect(<q-args>)
 	" Use the tags_keys file as an input for tselect.
 	" command! TagSearch call fzf#run(fzf#wrap({'source' : readfile('tags_keys'), 'sink' : function('<SID>TagSelect')}))
-	command! TagSearch call s:TagSearch()
+	command! TagSearch call s:TagSearch(expand('<cword>'))
 
 	" Override the Window command completion.
 	command! W :w
