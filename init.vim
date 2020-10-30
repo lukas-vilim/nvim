@@ -363,7 +363,7 @@
 	" Turn off autohighlight by hitting enter.
 	nnoremap <CR> :nohl<CR><CR>
 
-	let g:fzf_follow = 0
+	let g:fzf_follow = 1
 	let g:fzf_hidden = 1
 	let cmd = 'rg --files'
 
@@ -527,7 +527,7 @@
 
 	" the clipboard now action is now bound to unnamed " and + registers.
 	" Immediate pasting!
-	set clipboard^=unnamedplus
+	set clipboard^=unnamed,unnamedplus
 
 	" Consistent yank.
 	nnoremap Y y$
