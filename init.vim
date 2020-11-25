@@ -365,6 +365,9 @@
 
 	let g:fzf_follow = 1
 	let g:fzf_hidden = 1
+	let g:fzf_preview_window = []
+	let g:fzf_layout = { 'down': '40%' }
+
 	let cmd = 'rg --files'
 
 	if g:fzf_follow
