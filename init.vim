@@ -609,5 +609,15 @@
 	nnoremap <Leader>gs :Gstatus<cr>
 	nnoremap <Leader>gc :Gcommit<cr>
 	" }}}
+" Presentation {{{
+	nnoremap <c-j> :bn<cr>
+	nnoremap <c-k> :bp<cr>
+	nnoremap <c-p> o• 
+
+	set nolist
+	set nohls
+	set nonumber norelativenumber
+
+	" }}}
 
 " vim:set foldmethod=marker foldtext=FoldTextWithFirstLine():
