@@ -45,7 +45,7 @@
 
 	" }}}
 " Utils {{{
-	function! s:get_visual_selection()
+	function! GetVisualSelection()
 		let [line_start, column_start] = getpos("'<")[1:2]
 		let [line_end, column_end] = getpos("'>")[1:2]
 		let lines = getline(line_start, line_end)
@@ -121,7 +121,7 @@
 	" enable for include debug when something gets odd...
 	let g:lsp_diagnostics_enabled = 0
 	let g:lsp_highlight_references_enabled = 1
-	let g:lsp_enable_clangd = 1
+	let g:lsp_enable_clangd = 0
 
 	if executable('pyls')
 		" pip install python-language-server
@@ -226,7 +226,7 @@
 		elseif a:mode == 1
 			let pattern = expand('<cword>')
 		elseif a:mode == 2
-			let pattern = s:get_visual_selection()
+			let pattern = GetVisualSelection()
 		else
 			echoerr 'No mode set!'
 			return
