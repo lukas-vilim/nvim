@@ -368,19 +368,29 @@
 	let g:fzf_hidden = 1
 	let g:fzf_preview_window = []
 	let g:fzf_layout = { 'down': '40%' }
+	let g:fzf_globs = ['!.hg', '!.svn', '!.git', '*.h', '*.cpp', '*.c', '*.txt', '*.md', '*.bat']
 
-	let cmd = 'rg --files'
+	function! FzfUpdateGlobs()
+		let cmd = 'rg --files '
 
-	if g:fzf_follow
-		let cmd .= ' --follow'
-	endif
+		if g:fzf_follow
+			let cmd .= '--follow '
+		endif
 
-	if g:fzf_hidden 
-		let cmd .= ' --hidden'
-	endif
-	
-	let cmd .= ' --glob "!.git" --glob "!.svn" --glob "!.hg"'
-	let $FZF_DEFAULT_COMMAND = cmd
+		if g:fzf_hidden 
+			let cmd .= '--hidden '
+		endif
+		
+		let tmp = g:fzf_globs[:]
+		call map(tmp, {idx, val -> '--glob "' . val . '"'})
+		let globs = join(tmp, ' ')
+		let cmd = cmd . globs
+
+		let $FZF_DEFAULT_COMMAND = cmd
+	endfunc
+
+	" Parses the collection of globals and sets up the $FZF_DEFAULT_COMMAND.
+	call FzfUpdateGlobs()
 
 	"Use ripgrep when installed.
 	if executable('rg')
