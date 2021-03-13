@@ -368,7 +368,7 @@
 	let g:fzf_hidden = 1
 	let g:fzf_preview_window = []
 	let g:fzf_layout = { 'down': '40%' }
-	let g:fzf_globs = ['!.hg', '!.svn', '!.git', '*.h', '*.cpp', '*.c', '*.txt', '*.md', '*.bat']
+	let g:fzf_globs = ['!.hg', '!.svn', '!.git', '*.h', '*.cpp', '*.c', '*.txt', '*.md', '*.bat', '*.ini']
 
 	function! FzfUpdateGlobs()
 		let cmd = 'rg --files '
@@ -562,18 +562,28 @@
 		call map(lines, {key, val -> strpart(val, 0, stridx(val, '	'))})
 		call uniq(lines)
 		call writefile(lines, 'tags_keys')
+		echom 'Tag keys made'
 	endfunc
 
 	" Common ctags command.
 	let s:ctags_cmd = 
-				\"!ctags.exe -R --c++-kinds=+p --fields=+iaS --extras=+q ".
-				\"--exclude=.git --exclude=.svn --exclude=extern --verbose=no"
+				\"ctags.exe -R --c++-kinds=+p --fields=+iaS --extras=+q ".
+				\"--exclude=.git --exclude=.svn --exclude=extern --verbose=no -a"
 
+	let g:ctags_dirs = ['./UE/UnrealEngine/Engine/Source', './BodyMap/Source']
 	func! RebuildTags()
-		echo s:ctags_cmd
-		exec s:ctags_cmd . " ./Enfusion" | exec s:ctags_cmd . " -a ./A4Gamecode"
-		call MakeTagKeys()
+		echom 'Source Directories:'
+		for dir in g:ctags_dirs
+			echom '  ' . dir
+		endfor
+
+		" let entires = map(copy(g:ctags_dirs), {_, val -> s:ctags_cmd . ' "' . val . '"'});
+		let cmd = join(map(copy(g:ctags_dirs), {_, val -> s:ctags_cmd . ' "' . val . '"'}), ' & ')
+		call delete('tags')
+		call delete('tags_keys')
+		exec '!' . cmd
 		echom 'Tags rebuilt!'
+		call MakeTagKeys()
 	endfunc
 
 	" Rebuild tags for the whole project.
