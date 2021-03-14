@@ -565,10 +565,9 @@
 		echom 'Tag keys made'
 	endfunc
 
+	let g:ctags_ue_excludes = ' --exclude="*UnrealEngine*.cpp" --exclude="*UnrealEngine*ThirdParty*"'
 	" Common ctags command.
-	let s:ctags_cmd = 
-				\"ctags.exe -R --c++-kinds=+p --fields=+iaS --extras=+q ".
-				\"--exclude=.git --exclude=.svn --exclude=extern --verbose=no -a"
+	let s:ctags_cmd = 'ctags.exe -R --fields=+S --exclude=.git --exclude=.svn --exclude=extern --languages=c++,c --verbose=no -a --sort=yes' . g:ctags_ue_excludes
 
 	let g:ctags_dirs = ['./UE/UnrealEngine/Engine/Source', './BodyMap/Source']
 	func! RebuildTags()
@@ -577,7 +576,6 @@
 			echom '  ' . dir
 		endfor
 
-		" let entires = map(copy(g:ctags_dirs), {_, val -> s:ctags_cmd . ' "' . val . '"'});
 		let cmd = join(map(copy(g:ctags_dirs), {_, val -> s:ctags_cmd . ' "' . val . '"'}), ' & ')
 		call delete('tags')
 		call delete('tags_keys')
