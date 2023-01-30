@@ -1,4 +1,4 @@
 # Installation
-1. :PlugInstall
+1. `:PlugInstall`
 2. Restart Vim
-3. :FZF
+3. `:FZF`
