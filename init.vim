@@ -368,7 +368,7 @@
 	let g:fzf_hidden = 1
 	let g:fzf_preview_window = []
 	let g:fzf_layout = { 'down': '40%' }
-	let g:fzf_globs = ['!.hg', '!.svn', '!.git', '*.h', '*.cpp', '*.c', '*.txt', '*.md', '*.bat', '*.ini']
+	let g:fzf_globs = ['!.hg', '!.svn', '!.git', '*.h', '*.cpp', '*.c', '*.txt', '*.md', '*.bat', '*.ini', '*.yml', '*.sh', '*.uproject', '*.py']
 
 	function! FzfUpdateGlobs()
 		let cmd = 'rg --files '
@@ -531,6 +531,9 @@
 	imap <Down> <Nop>
 	imap <Left> <Nop>
 	imap <Right> <Nop>
+
+	nmap <C-n> :bn<CR>
+	nmap <C-p> :bp<CR>
 
 	" inoremap <C-l> <Right>
 	" inoremap <C-j> <Down>
