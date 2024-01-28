@@ -5,6 +5,7 @@ return {
 	branch = 'v3.x',
 	config = function ()
 		local lsp_zero = require('lsp-zero')
+		lsp_zero.extend_lspconfig()
 
 		lsp_zero.on_attach(function(client, bufnr)
 			local opts = {buffer = bufnr, remap = false}
@@ -45,10 +46,8 @@ return {
 
 		cmp.setup({
 			sources = {
-				-- {name = 'path'},
 				{name = 'nvim_lsp'},
 				{name = 'nvim_lua'},
-				-- {name = 'luasnip', keyword_length = 2},
 				{name = 'buffer', keyword_length = 3},
 			},
 			formatting = lsp_zero.cmp_format(),
@@ -61,6 +60,7 @@ return {
 			}),
 		})
 	end},
+
 	{'neovim/nvim-lspconfig'},
 	{'hrsh7th/cmp-nvim-lsp'},
 	{'hrsh7th/nvim-cmp'},
