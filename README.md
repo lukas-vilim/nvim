@@ -1,4 +1,4 @@
-# Installation
-1. `:PlugInstall`
-2. Restart Vim
-3. `:FZF`
+# Description
+My personal settings to share across machines. Nothing more, nothing less.
+# Setup in case of forget
+:Lazy
