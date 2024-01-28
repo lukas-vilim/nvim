@@ -15,6 +15,14 @@ return {
 						".locres",
 						".po",
 						".mo",
+						".dll",
+						".so",
+						".lib",
+						".exe",
+						".ico",
+						".TGA",
+						".manifest",
+						".locmeta",
 					}
 				}
 			}
