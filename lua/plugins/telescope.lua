@@ -45,7 +45,7 @@ return {
 			vim.keymap.set('n', '<leader>T', builtin.tags, {})
 			vim.keymap.set('n', '<leader>R', builtin.lsp_references, {})
 			vim.keymap.set('n', '<leader>m', builtin.lsp_document_symbols, {})
-			vim.keymap.set('n', '<leader>h', builtin.help_tags, {})
+			vim.keymap.set('n', '<leader>H', builtin.help_tags, {})
 			vim.keymap.set('n', '<leader>D', builtin.diagnostics, {})
 		end
 	}
