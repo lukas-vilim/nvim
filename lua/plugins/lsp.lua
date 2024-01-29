@@ -30,13 +30,33 @@ return {
 			ensure_installed = {
 				'lua_ls',
 				'rust_analyzer',
-				'clangd'
+				'clangd',
+				'pylsp',
 			},
 			handlers = {
 				lsp_zero.default_setup,
 				lua_ls = function()
 					local lua_opts = lsp_zero.nvim_lua_ls()
 					require('lspconfig').lua_ls.setup(lua_opts)
+				end,
+				pylsp = function()
+					require('lspconfig').pylsp.setup({
+						settings = {
+							pylsp = {
+								plugins = {
+									pycodestyle = {
+										ignore = {
+											"E301",
+											"E302",
+											"E305",
+											"E501",
+											"E111",
+										}
+									},
+								}
+							}
+						}
+					})
 				end,
 			}
 		})
