@@ -3,6 +3,7 @@ vim.g.mapleader = " "
 require("basics.lazy")
 require("basics.remap")
 require("basics.set")
+require("basics.term")
 
 vim.cmd.colorscheme("gruvbox")
 
