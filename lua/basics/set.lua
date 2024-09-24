@@ -1,4 +1,3 @@
-vim.opt.guicursor = ""
 vim.opt.termguicolors = true
 vim.opt.bg = "dark"
 
@@ -41,3 +40,9 @@ vim.opt.ignorecase = true
 vim.opt.smartcase = true
 vim.opt.showmatch = false
 vim.opt.hls = true
+
+vim.api.nvim_create_autocmd(
+	{ "BufEnter", "CursorHold", "CursorHoldI", "FocusGained" },
+	{ command = "if mode() != 'c' | checktime | endif", pattern = { "*" } }
+)
+
