@@ -58,6 +58,21 @@ return {
 						}
 					})
 				end,
+				clangd = function()
+					require('lspconfig').clangd.setup({
+						cmd = {
+							"clangd",
+							"--offset-encoding=utf-16",
+							"--background-index",
+							"--background-index-priority=normal",
+							"--clang-tidy",
+							-- "--log=verbose",
+							-- "--pretty",
+						},
+						filetypes = {"c", "cpp", "h", "generated.h"},
+						verbose = true,
+					})
+				end,
 			}
 		})
 
