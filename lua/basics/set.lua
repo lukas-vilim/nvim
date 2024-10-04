@@ -1,5 +1,5 @@
 vim.opt.guicursor = ""
-vim.opt.termguicolors = true
+vim.opt.termguicolors = false
 vim.opt.bg = "dark"
 
 vim.opt.number = true
